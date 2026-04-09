@@ -17,9 +17,9 @@
 
 ## 🔧 核心技术栈
 
-- 前端：React 18 + TypeScript + Vite
+- 前端：React 19 + TypeScript + Vite
 - 后端：NestJS + `@nestjs/axios`
-- 第三方：DeepSeek API（可切换其他大模型）
+- 第三方：通义千问 API（可切换其他大模型）
 
 ## 📁 项目结构
 
@@ -71,7 +71,7 @@ pnpm run dev # 端口 5173
 - 流式聊天：AI 回答逐字输出，模拟真实对话
 - 多轮对话：支持连续上下文交流
 - 安全防护：API Key 后端隐藏，避免泄露
-- 灵活扩展：可切换 OpenAI、通义千问等大模型
+- 灵活扩展：可切换 OpenAI 等大模型
 
 ## 📦 简单部署
 
