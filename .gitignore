@@ -5,12 +5,20 @@ node_modules/
 # 环境变量文件（绝对不能提交！）
 .env.local
 .env.*.local
+backend/.env
+backend/.env.*
+!backend/.env.example
 
 # 构建产物
 dist/
 build/
 */dist/
 */build/
+backend/src/generated/
+backend/generated/
+frontend/dist/
+frontend/node_modules/
+backend/node_modules/
 
 # 日志
 logs/
@@ -35,7 +43,17 @@ Thumbs.db
 coverage/
 *.lcov
 
+# TypeScript 构建信息（如 nest -b）
+*.tsbuildinfo
+
 # 临时文件
 *.tmp
 *.temp
 .cache/
+
+# husky internals
+.husky/_/
+
+# Prisma - 生成的客户端缓存（由 npx prisma generate 生成，本地开发会自动生成）
+backend/.prisma/
+backend/node_modules/.prisma/

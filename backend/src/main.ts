@@ -15,7 +15,12 @@ async function bootstrap() {
   // 参数校验
   app.useGlobalPipes(new ValidationPipe());
 
-  const swaggerOptions = new DocumentBuilder().setTitle('API').setDescription('接口文档').setVersion('1.0').build();
+  const swaggerOptions = new DocumentBuilder()
+    .setTitle('API')
+    .setDescription('接口文档')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
 
   const document = SwaggerModule.createDocument(app, swaggerOptions);
   SwaggerModule.setup('docs', app, document);

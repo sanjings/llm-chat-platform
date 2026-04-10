@@ -1,0 +1,24 @@
+/* 与 base.scss 里 CSS 变量对齐，避免侧栏/主区在暗色下仍是默认浅色底 */
+.chat-shell.ant-layout {
+  min-height: 100vh;
+  background: var(--app-bg) !important;
+}
+
+.chat-shell > .ant-layout-sider {
+  background: var(--surface-elevated) !important;
+  border-inline-end: 1px solid var(--border-subtle);
+}
+
+.chat-shell .ant-layout-sider-trigger {
+  color: var(--app-text);
+  background: var(--surface-muted) !important;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.chat-shell > .ant-layout-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--app-bg) !important;
+}

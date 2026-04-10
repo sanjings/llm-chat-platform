@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
-import type { Message } from '../../../../types/chat';
+import type { Message } from 'types/chat';
 import MsgItem from '../Message';
+import './index.scss';
 
 export default function ChatBox({ messages }: { messages: Message[] }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -10,16 +11,7 @@ export default function ChatBox({ messages }: { messages: Message[] }) {
   }, [messages]);
 
   return (
-    <div
-      style={{
-        flex: 1,
-        padding: '20px',
-        overflowY: 'auto',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '8px',
-      }}
-    >
+    <div className="message-list">
       {messages.map((m, i) => (
         <MsgItem key={i} msg={m} />
       ))}

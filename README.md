@@ -25,7 +25,7 @@
 
 ```text
 llm-chat-platform/
-├── frontend/   # React 前端（聊天界面）
+├── frontend/   # React 前端（交互界面）
 ├── backend/    # NestJS 后端（API 转发、安全控制）
 ├── README.md   # 项目说明
 └── .gitignore  # Git 忽略文件
@@ -48,8 +48,8 @@ cd llm-chat-platform
 cd backend
 pnpm install
 
-# 复制 .env.example 为 .env，填入 DeepSeek API Key
-cp .env.example .env
+# .env中填入正确的Dashscope API Key
+DASHSCOPE_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxx
 pnpm run start:dev # 端口 3000
 ```
 

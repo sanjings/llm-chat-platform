@@ -1,13 +1,10 @@
-// src/components/ChatInput.tsx
 import { useState } from 'react';
+import { Button } from 'antd';
+import { ArrowUpOutlined } from '@ant-design/icons';
 
-export default function ChatInput({
-  onSend,
-  loading,
-}: {
-  onSend: (msg: string) => void;
-  loading: boolean;
-}) {
+import './index.scss';
+
+export default function ChatInput({ onSend, loading }: { onSend: (msg: string) => void; loading: boolean }) {
   const [text, setText] = useState('');
 
   const send = () => {
@@ -24,18 +21,18 @@ export default function ChatInput({
   };
 
   return (
-    <div style={{ padding: '16px', display: 'flex', gap: '10px', alignItems: 'flex-end' }}>
+    <div className="input-box">
       <textarea
-        style={{ flex: 1, padding: '12px', minHeight: '40px', resize: 'vertical' }}
+        className="input-textarea"
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="输入消息...（Shift+Enter换行，Enter发送）"
+        placeholder="发消息...（Shift+Enter换行，Enter发送）"
         disabled={loading}
       />
-      <button onClick={send} disabled={loading} style={{ padding: '12px 16px', height: '40px' }}>
-        {loading ? '发送中...' : '发送'}
-      </button>
+      <div className="actions">
+        <Button type="primary" shape="circle" icon={<ArrowUpOutlined />} onClick={send} disabled={loading} />
+      </div>
     </div>
   );
 }

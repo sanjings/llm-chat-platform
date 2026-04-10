@@ -1,0 +1,40 @@
+.input-box {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px;
+  background-color: var(--input-bg);
+  border: 1px solid var(--border-strong);
+  border-radius: 18px;
+  box-shadow: var(--shadow-input);
+
+  .input-textarea {
+    width: 100%;
+    height: auto;
+    min-height: 48px;
+    max-height: 30vh;
+    padding: 6px 10px 0;
+    overflow-y: auto;
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--app-text);
+    resize: none;
+    background: transparent;
+    border: none;
+    outline: none;
+    field-sizing: content;
+
+    &::placeholder {
+      color: var(--text-tertiary);
+    }
+  }
+
+  .actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    width: 100%;
+  }
+}
