@@ -28,7 +28,10 @@ http.interceptors.request.use((config) => {
 });
 
 http.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log(response.data);
+    return response.data;
+  },
   (error) => {
     const msg = error?.response?.data?.message || error?.message || '请求失败';
     return Promise.reject(new Error(msg));

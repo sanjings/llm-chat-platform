@@ -2,6 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -14,6 +16,12 @@ async function bootstrap() {
 
   // 参数校验
   app.useGlobalPipes(new ValidationPipe());
+
+  // 全局拦截器
+  app.useGlobalInterceptors(new TransformInterceptor());
+
+  // 全局异常过滤器
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   const swaggerOptions = new DocumentBuilder()
     .setTitle('API')
