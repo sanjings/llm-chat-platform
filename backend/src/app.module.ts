@@ -4,6 +4,7 @@ import { ChatModule } from './modules/chat/chat.module';
 import { SessionModule } from './modules/session/session.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { UserModule } from './modules/user/user.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { AuthModule } from './modules/auth/auth.module';
     }),
     PrismaModule,
     AuthModule,
+    UserModule,
     SessionModule,
     ChatModule
   ]

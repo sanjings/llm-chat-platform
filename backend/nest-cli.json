@@ -5,5 +5,8 @@
   "compilerOptions": {
     "deleteOutDir": true,
     "assets": [{ "include": "generated/prisma/**/*", "outDir": "dist/src" }]
-  }
+  },
+  "generated": { 
+    "spec": false
+   }
 }

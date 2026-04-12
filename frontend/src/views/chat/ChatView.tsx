@@ -14,16 +14,19 @@ interface ChatViewProps {
 
 /** 中间主区域：消息列表 + 输入框 */
 export default function ChatView({ currentSessionId, onSessionCreated, onSessionUpdated }: ChatViewProps) {
+  const [title, setTitle] = useState<string>('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const loadHistory = async () => {
       if (!currentSessionId) {
+        setTitle('新对话');
         setMessages([]);
         return;
       }
       const detail = await requestSessionDetail(currentSessionId);
+      setTitle(detail?.title || '新对话');
       setMessages(detail?.messages || []);
     };
     loadHistory();
@@ -63,7 +66,7 @@ export default function ChatView({ currentSessionId, onSessionCreated, onSession
 
   return (
     <div className="chat-window">
-      <h1 className="chat-window-title">AI 聊天</h1>
+      <h1 className="chat-window-title">{title}</h1>
       <div className="chat-window-inner">
         <ChatBox messages={messages} />
         <ChatInput onSend={send} loading={loading} />

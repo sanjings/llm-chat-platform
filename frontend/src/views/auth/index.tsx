@@ -1,4 +1,4 @@
-import { login, register } from '@/services/api/auth';
+import { login, registerLogin, type AuthUser } from '@/services/api/auth';
 import { setToken } from '@/services/request';
 import { Button, Form, Input, Segmented, Space, Switch, Typography, Upload, message } from 'antd';
 import type { UploadFile } from 'antd/es/upload/interface';
@@ -7,7 +7,7 @@ import { useState } from 'react';
 interface AuthPageProps {
   darkMode: boolean;
   onChangeDarkMode: (value: boolean) => void;
-  onAuthSuccess: () => void;
+  onAuthSuccess: (userInfo: AuthUser) => void;
 }
 
 export default function AuthPage({ darkMode, onChangeDarkMode, onAuthSuccess }: AuthPageProps) {
@@ -51,15 +51,16 @@ export default function AuthPage({ darkMode, onChangeDarkMode, onAuthSuccess }: 
               const result =
                 mode === 'login'
                   ? await login({ phone: values.phone, password: values.password })
-                  : await register({
+                  : await registerLogin({
                       phone: values.phone,
                       password: values.password,
                       nickname: values.nickname || '新用户',
                       avatar
                     });
               setToken(result.accessToken);
+              localStorage.setItem('userInfo', JSON.stringify(result.userInfo));
               message.success(mode === 'login' ? '登录成功' : '注册成功');
-              onAuthSuccess();
+              onAuthSuccess(result.userInfo);
             } catch (err) {
               message.error(err instanceof Error ? err.message : '操作失败');
             }

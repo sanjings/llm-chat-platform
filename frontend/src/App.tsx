@@ -1,7 +1,7 @@
 import ChatShell from '@/views/chat/ChatShell';
 import AuthPage from '@/views/auth';
 import { clearToken } from '@/services/request';
-import { getMe, type AuthUser } from '@/services/api/auth';
+import { type AuthUser } from '@/services/api/auth';
 import { ConfigProvider, theme } from 'antd';
 import { useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
@@ -14,12 +14,13 @@ function App() {
   const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
-    getMe()
-      .then((user) => setCurrentUser(user))
-      .catch(() => {
-        setCurrentUser(null);
-        if (location.pathname !== '/auth') navigate('/auth', { replace: true });
-      });
+    const userInfo = localStorage.getItem('userInfo');
+    if (userInfo) {
+      setCurrentUser(JSON.parse(userInfo));
+    } else {
+      setCurrentUser(null);
+      if (location.pathname !== '/auth') navigate('/auth', { replace: true });
+    }
   }, []);
 
   useEffect(() => {
@@ -28,15 +29,14 @@ function App() {
 
   const handleLogout = () => {
     clearToken();
+    localStorage.removeItem('userInfo');
     setCurrentUser(null);
     navigate('/auth', { replace: true });
   };
 
-  const handleAuthSuccess = () => {
-    getMe().then((user) => {
-      setCurrentUser(user);
-      navigate('/chat', { replace: true });
-    });
+  const handleAuthSuccess = (userInfo: AuthUser) => {
+    setCurrentUser(userInfo);
+    navigate('/chat', { replace: true });
   };
 
   return (

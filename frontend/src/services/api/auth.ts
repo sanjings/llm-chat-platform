@@ -9,20 +9,15 @@ export interface AuthUser {
 
 export interface AuthResponse {
   accessToken: string;
-  user: AuthUser;
+  userInfo: AuthUser;
 }
 
-export async function register(payload: { phone: string; password: string; nickname: string; avatar?: string }) {
-  const { data } = await http.post<AuthResponse>('/auth/register', payload);
+export async function registerLogin(payload: { phone: string; password: string; nickname: string; avatar?: string }) {
+  const { data } = await http.post<AuthResponse>('/auth/registerLogin', payload);
   return data;
 }
 
 export async function login(payload: { phone: string; password: string }) {
   const { data } = await http.post<AuthResponse>('/auth/login', payload);
-  return data;
-}
-
-export async function getMe() {
-  const { data } = await http.get<AuthUser>('/auth/me');
   return data;
 }

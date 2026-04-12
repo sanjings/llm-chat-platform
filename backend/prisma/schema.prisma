@@ -6,9 +6,9 @@ datasource db {
 }
 
 generator client {
-  provider      = "prisma-client"
-  output        = "../src/generated/prisma"
-  moduleFormat  = "cjs"
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
 }
 
 model Session {
@@ -46,7 +46,7 @@ model Message {
   sessionId  String
   session    Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   role       Role
-  content    String
+  content    String   @db.MediumText()
   createTime DateTime @default(now())
 
   @@index([sessionId, createTime])
