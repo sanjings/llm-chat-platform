@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { roleToLowerCase } from 'src/utils/role.utils';
 
@@ -28,7 +28,7 @@ export class SessionService {
         }
       }
     });
-    if (!session) throw new NotFoundException('会话不存在');
+    if (!session) throw new BadRequestException('会话不存在');
     if (session.userId !== userId) throw new ForbiddenException('无权访问该会话');
     return {
       ...session,
@@ -70,7 +70,7 @@ export class SessionService {
       where: { id: sessionId },
       select: { id: true, userId: true }
     });
-    if (!session) throw new NotFoundException('会话不存在');
+    if (!session) throw new BadRequestException('会话不存在');
     if (session.userId !== userId) throw new ForbiddenException('无权操作该会话');
   }
 }

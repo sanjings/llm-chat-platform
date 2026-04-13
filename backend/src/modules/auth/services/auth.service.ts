@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { compare, hashSync } from 'bcryptjs';
 import { LoginDto, RegisterDto } from '../dtos/auth.dto';
@@ -23,10 +23,10 @@ export class AuthService {
 
   async login(body: LoginDto) {
     const user = await this.userService.getUserByPhone(body.phone);
-    if (!user) throw new UnauthorizedException('账号不存在');
+    if (!user) throw new BadRequestException('账号不存在');
 
     const valid = await compare(body.password, user.password);
-    if (!valid) throw new UnauthorizedException('账号或密码错误');
+    if (!valid) throw new BadRequestException('账号或密码错误');
 
     return this.buildAuthResponse(user.id, user.phone, user.nickname, user.avatar);
   }

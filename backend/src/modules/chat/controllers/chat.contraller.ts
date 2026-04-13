@@ -2,10 +2,9 @@ import { Controller, Post, Body, Res, UseGuards } from '@nestjs/common';
 import { ChatService } from '../services/chat.services';
 import { ChatDto } from '../dtos/chat.dto';
 import { type Response } from 'express';
-import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
-import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { JwtPayload } from 'src/modules/auth/interfaces/jwt-payload.interface';
-import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 /** 边收大模型字节、边拼出「完整助手回复」，方便流结束后写入数据库（和供应商返回的 JSON 格式有关） */
 function accumulateAssistantFromSseChunk(
@@ -37,9 +36,7 @@ function accumulateAssistantFromSseChunk(
 }
 
 @Controller('chat')
-@UseGuards(JwtAuthGuard)
 @ApiTags('chat')
-@ApiBearerAuth()
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
