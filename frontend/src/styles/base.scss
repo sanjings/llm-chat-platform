@@ -1,14 +1,4 @@
-@use './variables.scss' as *;
-
 :root {
-  --color-black: #{$color-black};
-  --color-gray: #{$color-gray};
-  --color-blue: #{$color-blue};
-  --color-red: #{$color-red};
-  --color-green: #{$color-green};
-  --color-yellow: #{$color-yellow};
-  --bg-color-gray: #{$bg-color-gray};
-
   /* 主题：与 Ant Design 默认/暗色算法大致对齐，供自定义区域使用 */
   --app-bg: #f5f5f5;
   --app-text: rgba(0, 0, 0, 0.88);

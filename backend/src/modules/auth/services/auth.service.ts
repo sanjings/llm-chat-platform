@@ -12,7 +12,7 @@ export class AuthService {
   ) {}
 
   async register(body: RegisterDto) {
-    this.userService.createUser({ ...body, password: this.hashPassword(body.password) });
+    await this.userService.createUser({ ...body, password: this.hashPassword(body.password) });
   }
 
   async registerLogin(body: RegisterDto) {
@@ -22,8 +22,7 @@ export class AuthService {
   }
 
   async login(body: LoginDto) {
-    const user = await this.userService.getUserByPhone(body.phone);
-    if (!user) throw new BadRequestException('账号不存在');
+    const user = await this.userService.getUserByPhoneOrThrowForLogin(body.phone);
 
     const valid = await compare(body.password, user.password);
     if (!valid) throw new BadRequestException('账号或密码错误');
@@ -43,7 +42,7 @@ export class AuthService {
         id: userId,
         phone,
         nickname,
-        avatar
+        avatar: avatar ?? null
       }
     };
   }

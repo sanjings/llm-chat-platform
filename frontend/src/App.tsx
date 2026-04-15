@@ -1,84 +1,28 @@
-import ChatShell from '@/views/chat/ChatShell';
-import AuthPage from '@/views/auth';
-import { clearToken } from '@/services/request';
-import { type AuthUser } from '@/services/api/auth';
 import { ConfigProvider, theme } from 'antd';
-import { useEffect, useState } from 'react';
-import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import './styles/base.scss';
+import Router from './router';
+import { AppTheme, useAppStore } from './store/app';
+import { useEffect } from 'react';
+import zhCN from 'antd/locale/zh_CN';
 
-function App() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
-  const [darkMode, setDarkMode] = useState(false);
+export default function App() {
+  const themeMode = useAppStore((state) => state.themeMode);
 
   useEffect(() => {
-    const userInfo = localStorage.getItem('userInfo');
-    if (userInfo) {
-      setCurrentUser(JSON.parse(userInfo));
-    } else {
-      setCurrentUser(null);
-      if (location.pathname !== '/auth') navigate('/auth', { replace: true });
-    }
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
-  }, [darkMode]);
-
-  const handleLogout = () => {
-    clearToken();
-    localStorage.removeItem('userInfo');
-    setCurrentUser(null);
-    navigate('/auth', { replace: true });
-  };
-
-  const handleAuthSuccess = (userInfo: AuthUser) => {
-    setCurrentUser(userInfo);
-    navigate('/chat', { replace: true });
-  };
+    document.documentElement.setAttribute('data-theme', themeMode === AppTheme.DARK ? 'dark' : 'light');
+  }, [themeMode]);
 
   return (
     <ConfigProvider
+      locale={zhCN}
       theme={{
-        algorithm: darkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,
+        algorithm: themeMode === AppTheme.DARK ? theme.darkAlgorithm : theme.defaultAlgorithm,
         token: {
-          colorLink: darkMode ? '#69b1ff' : '#1677ff',
-          colorPrimary: darkMode ? '#1668dc' : '#1677ff'
+          colorLink: themeMode === AppTheme.DARK ? '#69b1ff' : '#1677ff',
+          colorPrimary: themeMode === AppTheme.DARK ? '#1668dc' : '#1677ff'
         }
       }}
     >
-      <Routes>
-        <Route
-          path="/auth"
-          element={
-            currentUser ? (
-              <Navigate to="/chat" replace />
-            ) : (
-              <AuthPage darkMode={darkMode} onChangeDarkMode={setDarkMode} onAuthSuccess={handleAuthSuccess} />
-            )
-          }
-        />
-        <Route
-          path="/chat"
-          element={
-            currentUser ? (
-              <ChatShell
-                darkMode={darkMode}
-                onChangeDarkMode={setDarkMode}
-                currentUser={currentUser}
-                onLogout={handleLogout}
-              />
-            ) : (
-              <Navigate to="/auth" replace />
-            )
-          }
-        />
-        <Route path="*" element={<Navigate to={currentUser ? '/chat' : '/auth'} replace />} />
-      </Routes>
+      <Router />
     </ConfigProvider>
   );
 }
-
-export default App;

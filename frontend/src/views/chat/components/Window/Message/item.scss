@@ -1,0 +1,17 @@
+.message-item {
+  max-width: 100%;
+  margin-block: 10px;
+  font-size: 16px;
+  line-height: 1.75;
+  color: var(--app-text);
+  border-radius: 12px;
+
+  &--user {
+    background-color: var(--msg-user-bg);
+    padding: 10px 16px;
+  }
+
+  // &--assistant {
+  // background-color: var(--msg-assistant-bg);
+  // }
+}

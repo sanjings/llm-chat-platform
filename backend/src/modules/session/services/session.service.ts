@@ -1,41 +1,100 @@
 import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from 'src/database/prisma.service';
 import { roleToLowerCase } from 'src/utils/role.utils';
+import { resolveOffsetPagination } from 'src/common/pagination/offset-pagination.util';
+import {
+  decodeMessageCursor,
+  encodeMessageCursor,
+  resolveMessagePageSize
+} from 'src/common/pagination/message-cursor.util';
 
 @Injectable()
 export class SessionService {
   constructor(private prisma: PrismaService) {}
 
-  async getList(userId: string) {
-    return this.prisma.session.findMany({
-      where: { userId },
-      orderBy: { updateTime: 'desc' },
-      select: {
-        id: true,
-        title: true,
-        createTime: true,
-        updateTime: true
-      }
-    });
+  async getList(userId: string, pageNo?: number, pageSize?: number) {
+    const { skip, take, pageNo: p, pageSize: s } = resolveOffsetPagination(pageNo, pageSize);
+    const where = { userId };
+    const [list, total] = await Promise.all([
+      this.prisma.session.findMany({
+        where,
+        orderBy: { createTime: 'desc' },
+        skip,
+        take,
+        select: {
+          id: true,
+          title: true,
+          createTime: true,
+          updateTime: true
+        }
+      }),
+      this.prisma.session.count({ where })
+    ]);
+    return { list, total, pageNo: p, pageSize: s };
   }
 
   async findOne(id: string, userId: string) {
     const session = await this.prisma.session.findUnique({
       where: { id },
-      include: {
-        messages: {
-          orderBy: { createTime: 'asc' }
-        }
+      select: {
+        id: true,
+        title: true,
+        userId: true,
+        createTime: true,
+        updateTime: true
       }
     });
     if (!session) throw new BadRequestException('会话不存在');
     if (session.userId !== userId) throw new ForbiddenException('无权访问该会话');
+    return session;
+  }
+
+  /**
+   * 按时间倒序取「最新一页」，返回列表为时间正序（适合气泡展示）。
+   * cursor 表示上一页中**最旧一条**消息，用于继续向更早翻页。
+   */
+  async listMessages(sessionId: string, userId: string, cursorRaw?: string, pageSize?: number) {
+    await this.assertSessionOwner(sessionId, userId);
+    const take = resolveMessagePageSize(pageSize);
+    const decoded = decodeMessageCursor(cursorRaw);
+
+    const where = {
+      sessionId,
+      ...(decoded && {
+        OR: [
+          { createTime: { lt: new Date(decoded.t) } },
+          { AND: [{ createTime: new Date(decoded.t) }, { id: { lt: decoded.id } }] }
+        ]
+      })
+    };
+
+    const rows = await this.prisma.message.findMany({
+      where,
+      orderBy: [{ createTime: 'desc' }, { id: 'desc' }],
+      take: take + 1
+    });
+
+    const hasMore = rows.length > take;
+    const slice = hasMore ? rows.slice(0, take) : rows;
+    const chronological = slice.reverse().map((msg) => ({
+      ...msg,
+      role: roleToLowerCase(msg.role)
+    }));
+
+    const oldest = chronological[0];
+    const nextCursor =
+      hasMore && oldest
+        ? encodeMessageCursor({
+            id: oldest.id,
+            t: oldest.createTime.toISOString()
+          })
+        : null;
+
     return {
-      ...session,
-      messages: session.messages.map((msg) => ({
-        ...msg,
-        role: roleToLowerCase(msg.role)
-      }))
+      list: chronological,
+      nextCursor,
+      hasMore: Boolean(nextCursor),
+      pageSize: take
     };
   }
 

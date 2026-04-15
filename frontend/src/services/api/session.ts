@@ -1,27 +1,29 @@
-import { http } from '../request';
-import type { Session, SessionDetail } from 'types/chat';
+import type { PageListResponse, PageQueryParam } from 'types/api';
+import { requestGet, requestPost, requestDelete } from '../request';
+import type { Session, SessionDetail, SessionMessagesPage } from 'types/chat';
 
-export const requestSessionList = async () => {
-  const { data } = await http.get<Session[]>('/session/list');
-  return data;
+export const requestSessionList = async (params: PageQueryParam) => {
+  return await requestGet<PageListResponse<Session>>('/session/list', {
+    params
+  });
 };
 
 export const requestSessionDetail = async (id: string) => {
-  const { data } = await http.get<SessionDetail>(`/session/detail/${id}`);
-  return data;
+  return await requestGet<SessionDetail>(`/session/detail/${id}`);
+};
+
+export const requestSessionMessages = async (sessionId: string, params?: { cursor?: string; pageSize?: number }) => {
+  return await requestGet<SessionMessagesPage>(`/session/messages/${sessionId}`, { params });
 };
 
 export const requestCreateSession = async (title?: string) => {
-  const { data } = await http.post<Session>('/session/create', { title });
-  return data;
+  return await requestPost<Session>('/session/create', { title });
 };
 
 export const requestUpdateSessionTitle = async (id: string, title: string) => {
-  const { data } = await http.patch<Session>(`/session/title/${id}`, { title });
-  return data;
+  return await requestPost<Session>(`/session/title/update`, { id, title });
 };
 
 export const requestDeleteSession = async (id: string) => {
-  const { data } = await http.delete<Session>(`/session/${id}`);
-  return data;
+  return await requestDelete<Session>(`/session/delete/${id}`);
 };

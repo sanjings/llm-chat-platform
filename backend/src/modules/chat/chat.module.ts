@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
 import { ChatService } from './services/chat.services';
-import { ChatController } from './controllers/chat.contraller';
+import { ChatController } from './controllers/chat.controller';
 import { SessionModule } from '../session/session.module';
 
 @Module({

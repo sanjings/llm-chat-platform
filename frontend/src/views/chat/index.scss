@@ -1,0 +1,42 @@
+.chat-layout {
+  height: 100vh;
+  background-color: var(--app-bg) !important;
+  // .ant-layout-sider-zero-width-trigger {
+  //   color: var(--app-text);
+  //   background: var(--surface-muted) !important;
+  //   border-top: 1px solid var(--border-subtle);
+  // }
+  &-sider {
+    background-color: var(--surface-elevated) !important;
+    border-inline-end: 1px solid var(--border-subtle);
+
+    &-inner {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      padding-inline: 12px;
+      &__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-block: 15px;
+      }
+
+      &__content {
+        flex: 1;
+        overflow: hidden;
+      }
+      &__footer {
+        padding-bottom: 10px;
+      }
+    }
+  }
+
+  &-content {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    background: var(--app-bg) !important;
+  }
+}

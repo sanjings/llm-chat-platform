@@ -1,21 +1,22 @@
-import { IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsPhoneNumber, IsString, Matches, MaxLength, MinLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-
-const PHONE_REGEX = /^1\d{10}$/;
 
 export class RegisterDto {
   @ApiProperty({ example: '13800138000' })
+  @IsNotEmpty({ message: '手机号不能为空' })
   @IsString()
-  @Matches(PHONE_REGEX, { message: '手机号格式不正确' })
+  @IsPhoneNumber('CN', { message: '手机号格式不正确' })
   phone: string;
 
   @ApiProperty({ minLength: 6, maxLength: 32 })
+  @IsNotEmpty({ message: '密码不能为空' })
   @IsString()
   @MinLength(6)
   @MaxLength(32)
   password: string;
 
   @ApiProperty({ minLength: 2, maxLength: 20 })
+  @IsNotEmpty({ message: '昵称不能为空' })
   @IsString()
   @MinLength(2)
   @MaxLength(20)
@@ -29,11 +30,13 @@ export class RegisterDto {
 
 export class LoginDto {
   @ApiProperty({ example: '13800138000' })
+  @IsNotEmpty({ message: '手机号不能为空' })
   @IsString()
-  @Matches(PHONE_REGEX, { message: '手机号格式不正确' })
+  @IsPhoneNumber('CN', { message: '手机号格式不正确' })
   phone: string;
 
   @ApiProperty({ minLength: 6, maxLength: 32 })
+  @IsNotEmpty({ message: '密码不能为空' })
   @IsString()
   @MinLength(6)
   @MaxLength(32)

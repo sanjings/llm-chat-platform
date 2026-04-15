@@ -1,0 +1,23 @@
+.user-container {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 6px 9px 6px 6px;
+  border-radius: 12px;
+  &:hover {
+    background-color: var(--surface-hover);
+  }
+  .user-info {
+    flex: 1;
+    overflow: hidden;
+  }
+  .user-avatar {
+    border: 1px solid var(--border-subtle);
+    border-radius: 50%;
+  }
+  .user-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

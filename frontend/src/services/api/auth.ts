@@ -1,23 +1,20 @@
-import { http } from '../request';
-
-export interface AuthUser {
-  id: string;
-  phone: string;
-  nickname: string;
-  avatar?: string | null;
-}
+import type { User } from 'types/user';
+import { requestPost } from '../request';
 
 export interface AuthResponse {
   accessToken: string;
-  userInfo: AuthUser;
+  userInfo: User;
 }
 
-export async function registerLogin(payload: { phone: string; password: string; nickname: string; avatar?: string }) {
-  const { data } = await http.post<AuthResponse>('/auth/registerLogin', payload);
-  return data;
+export async function requestRegisterAndLogin(payload: {
+  phone: string;
+  password: string;
+  nickname: string;
+  avatar?: string;
+}) {
+  return await requestPost<AuthResponse>('/auth/registerLogin', payload);
 }
 
-export async function login(payload: { phone: string; password: string }) {
-  const { data } = await http.post<AuthResponse>('/auth/login', payload);
-  return data;
+export async function requestLogin(payload: { phone: string; password: string }) {
+  return await requestPost<AuthResponse>('/auth/login', payload);
 }

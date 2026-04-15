@@ -26,7 +26,6 @@ export default ({ mode }: ConfigEnv): UserConfigExport => {
       preprocessorOptions: {
         scss: {
           additionalData: `
-            @use "@/styles/variables.scss" as *;
             @use "@/styles/mixins.scss" as *;
           `
         }

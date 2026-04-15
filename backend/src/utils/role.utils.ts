@@ -1,7 +1,7 @@
-import { Role } from '../generated/prisma/enums';
+import { Role, type MessageRoleWire } from '../constants/role.const';
 
-export function roleToLowerCase(role: Role): 'user' | 'assistant' | 'system' {
-  const map: Record<Role, 'user' | 'assistant' | 'system'> = {
+export function roleToLowerCase(role: Role): MessageRoleWire {
+  const map: Record<Role, MessageRoleWire> = {
     [Role.USER]: 'user',
     [Role.ASSISTANT]: 'assistant',
     [Role.SYSTEM]: 'system'

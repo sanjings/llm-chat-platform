@@ -1,6 +1,7 @@
 import type { Message } from 'types/chat';
 import { readStream } from '@/utils/stream';
-import { getToken } from '../request';
+import { getCache } from '@/utils/cache';
+import { safeParse } from '@/utils';
 
 /**
  * 流式对话。modelId 预留给下一版多模型，不传则走后端环境变量默认模型。
@@ -9,11 +10,12 @@ export async function requestChat(
   messages: Message[],
   sessionId: string | null,
   onDelta: (text: string) => void,
-  options?: { modelId?: string }
+  options?: { modelId?: string; signal?: AbortSignal; responseFormat?: 'text' | 'markdown' }
 ) {
-  const token = getToken();
+  const token = safeParse(getCache('STORE_USER'))?.state?.token;
   const res = await fetch('/api/chat/stream', {
     method: 'POST',
+    signal: options?.signal,
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -21,7 +23,8 @@ export async function requestChat(
     body: JSON.stringify({
       messages,
       sessionId,
-      ...(options?.modelId ? { modelId: options.modelId } : {})
+      ...(options?.modelId ? { modelId: options.modelId } : {}),
+      ...(options?.responseFormat ? { responseFormat: options.responseFormat } : {})
     })
   });
 
