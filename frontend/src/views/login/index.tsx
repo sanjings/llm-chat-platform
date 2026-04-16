@@ -59,8 +59,7 @@ export default function LoginPage() {
             } finally {
               setLoading(false);
             }
-          }}
-        >
+          }}>
           {mode === LoginMode.REGISTER && (
             <>
               <Form.Item name="nickname" label="昵称" rules={[{ required: true, message: '请输入昵称' }]}>
@@ -71,15 +70,13 @@ export default function LoginPage() {
           <Form.Item
             name="phone"
             label="手机号"
-            rules={[{ required: true, pattern: phoneReg, message: '请输入正确的手机号' }]}
-          >
+            rules={[{ required: true, pattern: phoneReg, message: '请输入正确的手机号' }]}>
             <Input placeholder="请输入手机号" maxLength={11} />
           </Form.Item>
           <Form.Item
             name="password"
             label="密码"
-            rules={[{ required: true, min: 6, max: 32, message: '请输入6-32位密码' }]}
-          >
+            rules={[{ required: true, min: 6, max: 32, message: '请输入6-32位密码' }]}>
             <Input.Password placeholder="请输入密码" maxLength={32} />
           </Form.Item>
           <Button block type="primary" size="large" htmlType="submit" loading={loading}>

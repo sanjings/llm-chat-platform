@@ -13,15 +13,14 @@ const getFormatName = (str: string) => {
 export default defineConfig([
   {
     serverUrl: 'http://localhost:3000/docs-json',
-    serverType: 'swagger',
+    serverType: 'openapi',
     target: 'typescript',
     typesOnly: false,
     prodEnvName: 'production',
-    outputFilePath: (interfaceInfo) => `src/services/api/generated/${getFormatName(interfaceInfo._category.name)}.ts`,
-    requestFunctionFilePath: 'src/services/api/request.ts',
+    outputFilePath: (interfaceInfo) => `src/services/swagger/${getFormatName(interfaceInfo._category.name)}.ts`,
+    requestFunctionFilePath: 'src/services/util.ts',
     projects: [
       {
-        token: 'xxx',
         categories: [
           {
             id: 0,

@@ -1,11 +1,7 @@
 export default {
   root: true,
   // 继承某些已有的规则
-  extends: [
-    'stylelint-config-recommended-scss',
-    'stylelint-config-recess-order',
-    'stylelint-prettier/recommended'
-  ],
+  extends: ['stylelint-config-recommended-scss', 'stylelint-config-recess-order', 'stylelint-prettier/recommended'],
   overrides: [
     {
       files: ['**/*.{jsx,tsx,html}'],

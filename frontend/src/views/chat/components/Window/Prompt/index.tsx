@@ -6,9 +6,7 @@ import { DRAFT_SESSION_KEY, useChatStore } from '@/store/chat';
 
 export default function ChatInput({ sessionId, onSend }: { sessionId: string | null; onSend: (msg: string) => void }) {
   const sessionKey = sessionId ?? DRAFT_SESSION_KEY;
-  const replying = useChatStore(
-    (state) => state.streamBySession[sessionKey]?.status === 'streaming'
-  );
+  const replying = useChatStore((state) => state.streamBySession[sessionKey]?.status === 'streaming');
   const stopSessionStream = useChatStore((state) => state.stopSessionStream);
 
   const [text, setText] = useState('');

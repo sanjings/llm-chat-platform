@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "esbenp.prettier-vscode", // Prettier格式化
+    "dbaeumer.vscode-eslint", // ESLint校验
+    "editorconfig.editorconfig", // 兼容.editorconfig
+    "ms-azuretools.vscode-docker", // Docker语法提示/格式化
+    "prisma.prisma" // Prisma语法提示/格式化
+  ]
+}

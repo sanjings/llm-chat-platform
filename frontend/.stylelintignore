@@ -1,0 +1,10 @@
+# 依赖与构建产物
+node_modules/
+dist/
+build/
+
+# 静态资源目录（无样式文件）
+public/
+
+# 测试文件（可选）
+test/

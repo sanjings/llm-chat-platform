@@ -1,10 +1,4 @@
-import {
-  ArgumentsHost,
-  Catch,
-  ExceptionFilter,
-  HttpException,
-  HttpStatus
-} from '@nestjs/common';
+import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { LoggerService } from '../logger/logger.service';
 import { StandardResponse } from '../response/standard.response';
@@ -18,10 +12,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const req = ctx.getRequest<Request>();
     const res = ctx.getResponse<Response>();
 
-    const status =
-      exception instanceof HttpException
-        ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+    const status = exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
 
     let message = '服务器异常';
     if (exception instanceof HttpException) {

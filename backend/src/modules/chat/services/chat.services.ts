@@ -19,8 +19,7 @@ export class ChatService {
   private readonly maxContextMessages = Number(process.env.LLM_CONTEXT_MAX_MESSAGES || 12);
   private readonly maxContextChars = Number(process.env.LLM_CONTEXT_MAX_CHARS || 12000);
   private readonly markdownSystemPrompt =
-    process.env.LLM_MARKDOWN_SYSTEM_PROMPT ||
-    '请使用 Markdown 格式回答。标题、列表、代码块请按标准 Markdown 输出。';
+    process.env.LLM_MARKDOWN_SYSTEM_PROMPT || '请使用 Markdown 格式回答。标题、列表、代码块请按标准 Markdown 输出。';
 
   constructor(
     private readonly sessionService: SessionService,

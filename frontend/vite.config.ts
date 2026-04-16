@@ -10,7 +10,7 @@ const pathResolve = (dir: string) => resolve(__dirname, dir);
 
 // https://vite.dev/config/
 export default ({ mode }: ConfigEnv): UserConfigExport => {
-  const viteEnv = loadEnv(mode, process.cwd()) as ImportMetaEnv;
+  const viteEnv = loadEnv(mode, process.cwd()) as unknown as ImportMetaEnv;
   const { VITE_PUBLIC_PATH, VITE_HTTP_BASE_URL } = viteEnv;
 
   return defineConfig({

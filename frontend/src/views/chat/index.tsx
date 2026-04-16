@@ -40,8 +40,7 @@ export default function ChatPage() {
         collapsible
         collapsedWidth={0}
         width={260}
-        className="chat-layout-sider"
-      >
+        className="chat-layout-sider">
         <div className="chat-layout-sider-inner">
           <div className="chat-layout-sider-inner__header">
             <Typography.Title level={3} style={{ margin: 0, color: 'var(--app-text)' }}>

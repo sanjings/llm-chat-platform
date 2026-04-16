@@ -14,8 +14,7 @@ export const Markdown = ({ children }: { children: string }) => {
         rehypePlugins={[rehypeSanitize, rehypeHighlight]}
         components={{
           pre: PreBlock
-        }}
-      >
+        }}>
         {children}
       </ReactMarkdown>
     </div>

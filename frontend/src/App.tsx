@@ -20,8 +20,7 @@ export default function App() {
           colorLink: themeMode === AppTheme.DARK ? '#69b1ff' : '#1677ff',
           colorPrimary: themeMode === AppTheme.DARK ? '#1668dc' : '#1677ff'
         }
-      }}
-    >
+      }}>
       <Router />
     </ConfigProvider>
   );

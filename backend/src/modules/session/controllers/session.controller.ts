@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param, Patch, Delete, Query } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Delete, Query } from '@nestjs/common';
 import { SessionService } from '../services/session.service';
 import { SessionDto } from '../dtos/session.dto';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';

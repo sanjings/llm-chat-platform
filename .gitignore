@@ -1,24 +1,16 @@
 # 依赖目录
-node_modules/
-*/node_modules/
+**/node_modules/
 
-# 环境变量文件（绝对不能提交！）
-.env.local
-.env.*.local
+# 环境变量文件
+**/.env.local
+**/.env.*.local
 backend/.env
-backend/.env.*
-!backend/.env.example
 
 # 构建产物
-dist/
-build/
-*/dist/
-*/build/
+**/dist/
+**/build/
 backend/src/generated/
 backend/generated/
-frontend/dist/
-frontend/node_modules/
-backend/node_modules/
 
 # 日志
 logs/
@@ -30,7 +22,6 @@ pnpm-debug.log*
 
 # IDE 配置
 .idea/
-.vscode/
 *.swp
 *.swo
 *~
@@ -51,9 +42,12 @@ coverage/
 *.temp
 .cache/
 
+# Lint 缓存（勿提交）
+.eslintcache
+.stylelintcache
+
 # husky internals
 .husky/_/
 
-# Prisma - 生成的客户端缓存（由 npx prisma generate 生成，本地开发会自动生成）
+# Prisma - 生成的客户端缓存
 backend/.prisma/
-backend/node_modules/.prisma/

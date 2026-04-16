@@ -72,8 +72,7 @@ export default function SessionBox({
         onClick={() => {
           onCreateSession();
           navigate('/chat');
-        }}
-      >
+        }}>
         开启新对话
       </Button>
 
@@ -85,8 +84,7 @@ export default function SessionBox({
             onClick={() => {
               onSelectSession(item);
               navigate(`/chat/${item.id}`);
-            }}
-          >
+            }}>
             <span className="session-list-item-title">{item.title}</span>
             <Dropdown
               menu={{
@@ -113,8 +111,7 @@ export default function SessionBox({
                 ]
               }}
               arrow={false}
-              trigger={['click']}
-            >
+              trigger={['click']}>
               <div onClick={(e) => e.stopPropagation()} className="session-list-item-ellipsis">
                 <EllipsisOutlined style={{ marginLeft: 8, fontSize: 16 }} />
               </div>

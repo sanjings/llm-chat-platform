@@ -31,7 +31,7 @@ export class LoggingInterceptor implements NestInterceptor {
       segments.push(`query:${safeJson(sanitizeForLog(req.query))}`);
     }
 
-    if (this.shouldLogBody(method, req)) {
+    if (this.shouldLogBody(method)) {
       const ct = String(req.headers['content-type'] || '');
       if (ct.includes('multipart/form-data')) {
         segments.push('body:[multipart/form-data,已省略文件二进制]');
@@ -61,7 +61,7 @@ export class LoggingInterceptor implements NestInterceptor {
     );
   }
 
-  private shouldLogBody(method: string, req: Request): boolean {
+  private shouldLogBody(method: string): boolean {
     if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
       return false;
     }

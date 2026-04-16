@@ -1,8 +1,38 @@
+# 依赖与构建产物
 node_modules/
 dist/
 build/
 coverage/
+
+# 日志与压缩文件
 *.log
 *.min.js
-**/schema.prisma
+
+# 锁文件
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Prisma 相关：只忽略自动生成文件
+backend/prisma/migrations/
 backend/src/generated/
+
+# 编辑器与工具目录
+.husky/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# 环境与临时文件
+.env
+.env.*
+!.env.example
+tmp/
+temp/
+
+# 其他自动生成/备份文件
+*.bak
+*.tmp
+*.orig

@@ -1,12 +1,12 @@
 @import './variables';
 
 .markdown-container {
+  width: 100%;
+  overflow: hidden;
   font-size: 16px;
   line-height: 1.75;
   color: var(--app-text);
-  word-break: break-word;
-  width: 100%;
-  overflow: hidden;
+  word-break: break-all;
   p {
     margin: 0.6em 0;
   }
@@ -60,42 +60,42 @@
 
   pre {
     padding: 16px;
-    background-color: $dark-bg;
     overflow-x: auto;
+    background-color: $dark-bg;
     border-radius: 12px;
 
     code {
-      background: transparent;
-      color: $color-w;
       padding: 0;
-      font-size: 13px;
       font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 13px;
+      color: $color-w;
+      background: transparent;
     }
   }
   table {
     width: 100%;
-    border-collapse: collapse;
     margin: 1em 0;
-    background-color: $dark-bg;
-    border-radius: 8px;
     overflow: hidden;
+    border-collapse: collapse;
+    background-color: $dark-bg;
     border: 1px solid $dark-bg;
+    border-radius: 8px;
 
     th,
     td {
-      border: 1px solid $dark-l-bg;
       padding: 10px 14px;
+      font-size: 14px;
       color: $color-w;
       text-align: left;
-      font-size: 14px;
+      border: 1px solid $dark-l-bg;
     }
     th {
-      border-color: rgba(#fff, 0.06);
+      border-color: rgba(#ffffff, 0.06);
     }
 
     th {
-      background: $dark-l-bg;
       font-weight: 600;
+      background: $dark-l-bg;
     }
 
     tr:hover td {

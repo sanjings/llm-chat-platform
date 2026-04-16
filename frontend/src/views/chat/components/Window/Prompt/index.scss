@@ -21,9 +21,9 @@
     line-height: 1.5;
     color: var(--app-text);
     resize: none;
+    outline: none;
     background: transparent;
     border: none;
-    outline: none;
     field-sizing: content;
 
     &::placeholder {

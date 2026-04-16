@@ -9,11 +9,7 @@ const DEFAULT_MAX_STRING = 1024;
  * 脱敏 + 截断长字符串，避免日志爆量、泄露凭据。
  * 聊天类大字段（如 messages[].content）仍可见前若干字符便于排错。
  */
-export function sanitizeForLog(
-  input: unknown,
-  maxStringLength: number = DEFAULT_MAX_STRING,
-  depth = 0
-): unknown {
+export function sanitizeForLog(input: unknown, maxStringLength: number = DEFAULT_MAX_STRING, depth = 0): unknown {
   if (depth > MAX_DEPTH) return '[MaxDepth]';
   if (input === null || input === undefined) return input;
   if (typeof input === 'string') {

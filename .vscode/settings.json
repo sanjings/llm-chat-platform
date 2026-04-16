@@ -1,0 +1,40 @@
+{
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/build": true,
+    "package-lock.json": true,
+    "pnpm-lock.yaml": true,
+    "yarn.lock": true
+  },
+  "search.followSymlinks": false,
+  "npm.packageManager": "pnpm",
+  // 编辑器基础配置
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "always",
+    "source.fixAll.stylelint": "always",
+    "source.fixAll.eslint": "always" // 保存自动修复ESLint错误
+  },
+  // 格式化工具关联
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "prettier.configPath": ".prettierrc.js",
+  "eslint.useFlatConfig": true,
+  "stylelint.enable": true,
+  "stylelint.validate": ["css", "less", "postcss", "scss", "vue", "sass"],
+  "stylelint.configFile": "./frontend/.stylelintrc.js",
+  // 禁用编辑器默认格式化，统一用Prettier
+  "[javascript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[typescript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[json]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[css]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[scss]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[html]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[markdown]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[dockerfile]": { "editor.defaultFormatter": "ms-azuretools.vscode-docker" },
+  // 必装插件（团队强制安装，避免格式不一致）
+  "extensions.ignoreRecommendations": false,
+  "workbench.startupEditor": "none"
+}

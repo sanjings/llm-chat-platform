@@ -1,5 +1,59 @@
 {
-	"dependencies": {
-		"react-copy-to-clipboard": "^5.1.1"
-	}
+  "name": "llm-chat-platform",
+  "version": "1.0.0",
+  "description": "全栈 AI 流式聊天平台 | React + NestJS + TypeScript + LLM API（前后端分离）",
+  "type": "module",
+  "keywords": [
+    "llm",
+    "chat",
+    "ai",
+    "stream",
+    "react",
+    "nestjs",
+    "typescript"
+  ],
+  "author": "sanjings",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sanjings/llm-chat-platform.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sanjings/llm-chat-platform/issues"
+  },
+  "homepage": "https://github.com/sanjings/llm-chat-platform#readme",
+  "scripts": {
+    "prepare": "husky",
+    "dev": "docker-compose up",
+    "dev:build": "docker-compose up --build",
+    "down": "docker-compose down",
+    "restart": "docker-compose restart",
+    "logs": "docker-compose logs -f",
+    "frontend:dev": "cd frontend && npm run dev",
+    "backend:dev": "cd backend && npm run start:dev",
+    "tsc": "npm --prefix frontend run tsc && npm --prefix backend run tsc",
+    "eslint": "eslint . --cache",
+    "eslint:fix": "eslint . --fix --cache",
+    "prettier": "prettier --write \"./**/*.{js,cjs,jsx,ts,tsx,json,html,css,less,scss,sass,md}\"",
+    "stylelint": "npm --prefix frontend run stylelint",
+    "format": "npm run stylelint && npm run prettier",
+    "install:all": "pnpm install && cd frontend && pnpm install && cd ../backend && pnpm install",
+    "clean": "rm -rf node_modules frontend/node_modules backend/node_modules"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
+    "@eslint/js": "^9.39.1",
+    "editorconfig": "^3.0.2",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-prettier": "5.5.5",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.8.3",
+    "typescript-eslint": "8.58.2"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
 }
