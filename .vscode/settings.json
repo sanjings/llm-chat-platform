@@ -35,6 +35,6 @@
   "[markdown]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
   "[dockerfile]": { "editor.defaultFormatter": "ms-azuretools.vscode-docker" },
   // 必装插件（团队强制安装，避免格式不一致）
-  "extensions.ignoreRecommendations": false,
+  "extensions.ignoreRecommendations": true,
   "workbench.startupEditor": "none"
 }

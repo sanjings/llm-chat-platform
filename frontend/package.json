@@ -4,11 +4,11 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "start": "vite",
+    "dev": "vite --host 0.0.0.0",
+    "start": "npm run dev",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "tsc": "tsc --noEmit",
+    "tsc": "tsc -b --noEmit",
     "stylelint": "stylelint --fix --cache \"**/*.{html,css,scss,less}\"",
     "ytt": "npx ytt --ignore-deprecations 5.0"
   },
@@ -16,6 +16,7 @@
     "@ant-design/icons": "~6.1.1",
     "antd": "^6.3.5",
     "axios": "^1.13.1",
+    "dayjs": "^1.11.20",
     "highlight.js": "^11.11.1",
     "react": "^19.2.4",
     "react-copy-to-clipboard": "^5.1.1",
@@ -30,6 +31,7 @@
   "devDependencies": {
     "@types/node": "^24.12.2",
     "@types/react": "^19.2.14",
+    "@types/react-copy-to-clipboard": "^5.0.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
     "cross-env": "^7.0.3",

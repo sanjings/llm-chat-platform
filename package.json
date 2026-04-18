@@ -24,11 +24,6 @@
   "homepage": "https://github.com/sanjings/llm-chat-platform#readme",
   "scripts": {
     "prepare": "husky",
-    "dev": "docker-compose up",
-    "dev:build": "docker-compose up --build",
-    "down": "docker-compose down",
-    "restart": "docker-compose restart",
-    "logs": "docker-compose logs -f",
     "frontend:dev": "cd frontend && npm run dev",
     "backend:dev": "cd backend && npm run start:dev",
     "tsc": "npm --prefix frontend run tsc && npm --prefix backend run tsc",

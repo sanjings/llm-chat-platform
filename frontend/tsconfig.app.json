@@ -1,33 +1,57 @@
 {
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
-    "target": "es2023",
-    "lib": ["ES2023", "DOM", "DOM.Iterable"],
-    "module": "esnext",
-    "types": ["vite/client"],
-    "skipLibCheck": true,
-
-    /* Bundler mode */
+    /* 指定 ECMAScript 目标版本 */
+    "target": "ESNext",
+    /* 启用现代 class 字段语法 */
+    "useDefineForClassFields": true,
+    /* 包含的类型库：ES最新 + 浏览器DOM */
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    /** 指定生成的模块代码 */
+    "module": "ESNext",
+    /* 模块解析策略 */
     "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
+    /** 禁用模块语法转换，类型必须用type 导入 */
     "verbatimModuleSyntax": true,
-    "moduleDetection": "force",
+    /* 允许导入 .ts 后缀文件 */
+    "allowImportingTsExtensions": true,
+    /* 允许导入 JSON 文件 */
+    "resolveJsonModule": true,
+    /* 隔离模块 */
+    "isolatedModules": true,
+    /* 不输出文件，只做类型检查 */
     "noEmit": true,
+    /* React 自动 JSX 转换（无需 import React） */
     "jsx": "react-jsx",
-
-    /* Linting */
+    /* 允许引入 JavaScript 文件（避免第三方库报错） */
+    "allowJs": true,
+    /* 跳过第三方库类型检查（提升速度） */
+    "skipLibCheck": true,
+    /** 要包含的类型声明文件 */
+    "types": ["vite/client"],
+    /* 开启严格模式 */
+    "strict": true,
+    /* 强制文件名大小写一致（跨平台必备） */
+    "forceConsistentCasingInFileNames": true,
+    /* 禁止未使用的变量 */
     "noUnusedLocals": true,
+    /* 禁止未使用的函数参数 */
     "noUnusedParameters": true,
-    "erasableSyntaxOnly": true,
+    /* 禁止 switch 穿透 */
     "noFallthroughCasesInSwitch": true,
+    /* 禁止函数参数双向逆变 */
+    "strictFunctionTypes": true,
+    /* 禁止 this 隐式 any */
+    "noImplicitThis": true,
+    /* 忽略特定版本的弃用警告 */
     "ignoreDeprecations": "6.0",
+    /** 指定基础 URL */
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
       "types/*": ["types/*"]
     }
   },
-
   "include": ["src", "types"],
   "exclude": ["node_modules", "dist", "build", "**/*.js"]
 }

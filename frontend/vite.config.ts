@@ -42,7 +42,7 @@ export default ({ mode }: ConfigEnv): UserConfigExport => {
         [VITE_HTTP_BASE_URL]: {
           target: 'http://localhost:3000',
           changeOrigin: true
-          // rewrite: (path) => path.replace(/^\/${VITE_HTTP_BASE_URL}/, ""),
+          // rewrite: (path) => path.replace(/^\/${VITE_HTTP_BASE_URL}/, '')
         }
       }
     },
@@ -59,6 +59,7 @@ export default ({ mode }: ConfigEnv): UserConfigExport => {
         algorithm: 'gzip', // 压缩算法
         ext: '.gz' // 压缩后的文件扩展名
       }),
+      // viteCompression({ verbose: true, disable: false, threshold: 10240, algorithm: 'brotliCompress', ext: '.br' }),
       visualizer()
     ],
     build: {
@@ -67,7 +68,33 @@ export default ({ mode }: ConfigEnv): UserConfigExport => {
       chunkSizeWarningLimit: 500, // 单个 chunk 文件的大小超过 500KB 时发出警告
       assetsInlineLimit: 4096, // 小于4kb base64转码
       reportCompressedSize: false, // 禁用 gzip 压缩大小报告
-      sourcemap: false // 构建后是否生成 source map 文件
+      sourcemap: false, // 构建后是否生成 source map 文件
+      rolldownOptions: {
+        output: {
+          /**
+           * 分块策略
+           * 1. 注意这些包名必须存在，否则打包会报错
+           * 2. 如果你不想自定义 chunk 分割策略，可以直接移除这段配置
+           */
+          manualChunks: (id: string) => {
+            if (id.includes('node_modules')) {
+              const parts = id.split('node_modules');
+              const pkgPath = parts.length > 1 ? parts.slice(1).join('node_modules') : '';
+              if (!pkgPath) return null;
+
+              // antd 全家桶（包含图标）
+              if (/antd|@ant-design/.test(pkgPath)) return 'antd-vendor';
+              // react
+              if (/react|react-dom|react-router-dom/.test(pkgPath)) return 'react-vendor';
+              // 高频通用工具库
+              if (/zustand|axios|dayjs/.test(pkgPath)) return 'utils-vendor';
+              return 'common-vendor';
+            }
+            // 其他依赖默认走 Rolldown 自动分块
+            return null;
+          }
+        }
+      }
     },
     define: {
       __APP_INFO__: {

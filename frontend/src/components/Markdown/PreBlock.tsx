@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { Children, isValidElement, useState, type ReactNode } from 'react';
 import { CheckOutlined, CopyOutlined } from '@ant-design/icons';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import './PreBlock.scss';
+import type { Components } from 'react-markdown';
 
 function extractText(node: unknown): string {
   if (node == null) return '';
@@ -13,12 +14,22 @@ function extractText(node: unknown): string {
   return '';
 }
 
-export default function PreBlock({ className, children, ...props }) {
+function firstCodeProps(children: ReactNode): { className?: string; innerChildren?: unknown } {
+  const first = Children.toArray(children)[0];
+  if (!isValidElement<{ className?: string; children?: unknown }>(first)) {
+    return {};
+  }
+  const { className, children: innerChildren } = first.props;
+  return { className, innerChildren };
+}
+
+const PreBlock: NonNullable<Components['pre']> = ({ className, children, ...props }) => {
   const [copied, setCopied] = useState(false);
 
-  const match = /language-(\w+)/.exec(children.props.className || '');
+  const { className: codeClassName, innerChildren } = firstCodeProps(children);
+  const match = /language-(\w+)/.exec(codeClassName || '');
   const lang = match?.[1]?.toLowerCase() || 'code';
-  const codeText = extractText(children.props.children).replace(/\n$/, '');
+  const codeText = extractText(innerChildren).replace(/\n$/, '');
 
   const handleCopy = () => {
     setCopied(true);
@@ -37,8 +48,10 @@ export default function PreBlock({ className, children, ...props }) {
         </CopyToClipboard>
       </div>
       <pre className={className} {...props}>
-        <code>{children}</code>
+        {children}
       </pre>
     </div>
   );
-}
+};
+
+export default PreBlock;

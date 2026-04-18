@@ -2,6 +2,7 @@ import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { PrismaClient } from '../generated/prisma/client';
 import { LoggerService } from 'src/common/logger/logger.service';
+import { databaseUrlToMariadbPoolConfig } from './mariadb-pool-config';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit {
@@ -10,7 +11,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
     if (!url) {
       throw new Error('DATABASE_URL 未配置，无法连接数据库');
     }
-    const adapter = new PrismaMariaDb(url);
+    const adapter = new PrismaMariaDb(databaseUrlToMariadbPoolConfig(url));
     super({
       adapter,
       log: [

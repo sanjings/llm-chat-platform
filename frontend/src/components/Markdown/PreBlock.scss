@@ -1,4 +1,4 @@
-@import './variables';
+@use './variables' as *;
 
 .pre-block-wrapper {
   margin: 1em 0;

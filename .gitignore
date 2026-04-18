@@ -11,6 +11,7 @@ backend/.env
 **/build/
 backend/src/generated/
 backend/generated/
+frontend/stats.*
 
 # 日志
 logs/

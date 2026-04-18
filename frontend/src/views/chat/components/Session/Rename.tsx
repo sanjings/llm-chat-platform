@@ -11,8 +11,8 @@ export default function RenameModal({
   onCancel
 }: {
   open: boolean;
-  sessionId: string;
-  sessionTitle: string;
+  sessionId?: string;
+  sessionTitle?: string;
   onFinish: () => void;
   onCancel: () => void;
 }) {
@@ -30,7 +30,7 @@ export default function RenameModal({
   const submitRename = async () => {
     try {
       setConfirmLoading(true);
-      const res = await requestUpdateSessionTitle(sessionId, title);
+      const res = await requestUpdateSessionTitle(sessionId!, title!);
       if (res.code === ApiResponseCode.SUCCESS) {
         onFinish();
         onCancel();
