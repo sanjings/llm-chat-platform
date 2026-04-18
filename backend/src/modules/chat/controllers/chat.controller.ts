@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Res } from '@nestjs/common';
+import { Controller, Post, Body, Res, Logger } from '@nestjs/common';
 import { ChatService } from '../services/chat.services';
 import { ChatDto } from '../dtos/chat.dto';
 import { type Response } from 'express';
@@ -23,6 +23,11 @@ function accumulateAssistantFromSseChunk(
     try {
       const j = JSON.parse(jsonStr) as Record<string, unknown>;
       if (provider === 'dashscope') {
+        const delta = (j as { choices?: { delta?: { content?: string } }[] }).choices?.[0]?.delta?.content;
+        if (typeof delta === 'string' && delta) {
+          state.assistant += delta;
+          continue;
+        }
         const full = (j as { output?: { text?: string } }).output?.text;
         if (typeof full === 'string') state.assistant = full;
       } else {
@@ -38,6 +43,8 @@ function accumulateAssistantFromSseChunk(
 @Controller('chat')
 @ApiTags('chat')
 export class ChatController {
+  private readonly logger = new Logger(ChatController.name);
+
   constructor(private readonly chatService: ChatService) {}
 
   @Post('stream')
@@ -78,7 +85,11 @@ export class ChatController {
         if (sseState.lineBuf.trim()) {
           accumulateAssistantFromSseChunk(provider, sseState, Buffer.from('\n'));
         }
-        await this.chatService.saveAssistantMsg(user.sub, sessionId, sseState.assistant);
+        try {
+          await this.chatService.saveAssistantMsg(user.sub, sessionId, sseState.assistant);
+        } catch (error) {
+          this.logger.error(`保存助手消息失败，sessionId=${sessionId}`, error as Error);
+        }
         if (!res.writableEnded) res.end();
       })();
     });
