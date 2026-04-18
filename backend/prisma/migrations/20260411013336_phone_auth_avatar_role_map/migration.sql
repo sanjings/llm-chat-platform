@@ -1,8 +1,8 @@
 -- AlterTable
-ALTER TABLE `message` MODIFY `role` ENUM('user', 'assistant', 'system') NOT NULL;
+ALTER TABLE `Message` MODIFY `role` ENUM('user', 'assistant', 'system') NOT NULL;
 
 -- AlterTable
-ALTER TABLE `user` ADD COLUMN `avatar` VARCHAR(191) NULL,
+ALTER TABLE `User` ADD COLUMN `avatar` VARCHAR(191) NULL,
     ADD COLUMN `phone` VARCHAR(191) NOT NULL,
     MODIFY `email` VARCHAR(191) NULL;
 
