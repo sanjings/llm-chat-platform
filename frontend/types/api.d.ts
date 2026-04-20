@@ -15,37 +15,3 @@ export interface ApiResponseData<T = unknown> {
    */
   message: string;
 }
-
-/**
- * 分页查询参数
- */
-export type PageQueryParam<T extends Recordable = Recordable> = {
-  /**
-   * 当前页码
-   */
-  pageNo?: number;
-  /**
-   * 每页查询条数
-   */
-  pageSize: number;
-} & T;
-
-type Listable = Recordable | string | number;
-
-/**
- * 分页查询列表数据
- */
-export interface PageListResponse<T extends Listable = Listable> {
-  /**
-   * 当前列表数据
-   */
-  list: Array<T>;
-  /**
-   * 总条数
-   */
-  total: number;
-  /**
-   * 总页数
-   */
-  totalPage?: number;
-}

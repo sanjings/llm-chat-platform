@@ -2,7 +2,8 @@ import { useEffect } from 'react';
 import { Skeleton } from 'antd';
 import ChatMessage from './Message/index';
 import Prompt from './Prompt/index';
-import type { Message, Session } from 'types/chat';
+import type { Message } from '@/store/chat';
+import { type RequestSessionListResponse } from '@/services/swagger/session';
 import Model from './Model';
 import { DRAFT_SESSION_KEY, useChatStore } from '@/store/chat';
 import './index.scss';
@@ -10,7 +11,7 @@ import './index.scss';
 const EMPTY_MESSAGES: Message[] = [];
 
 interface ChatViewProps {
-  curSession: Session | null;
+  curSession: RequestSessionListResponse['list'][number] | null;
   onSessionCreated: (sessionId: string) => void;
   onSessionUpdated: () => void;
 }

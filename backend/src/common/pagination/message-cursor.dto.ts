@@ -1,14 +1,3 @@
-import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { CursorPageQueryDto } from './page-query-base.dto';
 
-export class MessageCursorQueryDto {
-  @IsOptional()
-  @IsString()
-  cursor?: string;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  pageSize?: number;
-}
+export class MessageCursorQueryDto extends CursorPageQueryDto {}

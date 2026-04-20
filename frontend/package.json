@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "tsc": "tsc -b --noEmit",
     "stylelint": "stylelint --fix --cache \"**/*.{html,css,scss,less}\"",
-    "ytt": "npx ytt --ignore-deprecations 5.0"
+    "ytt": "cross-env TS_NODE_COMPILER_OPTIONS={\\\"ignoreDeprecations\\\":\\\"6.0\\\"} npx ytt --ignore-deprecations 5.0"
   },
   "dependencies": {
     "@ant-design/icons": "~6.1.1",

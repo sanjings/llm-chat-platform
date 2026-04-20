@@ -23,9 +23,13 @@ const reactRefreshVite = reactRefreshPlugin.configs.vite;
 export default tseslint.config(
   {
     ignores: [
+      '.vscode/**',
+      '.cursor/**',
       '**/node_modules/**',
       '**/dist/**',
       '**/build/**',
+      '**/coverage/**',
+      '**/swagger/**',
       '**/*.config.js',
       'lint-staged.config.mjs',
       '**/generated/**',

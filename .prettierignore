@@ -17,6 +17,9 @@ yarn.lock
 backend/prisma/migrations/
 backend/src/generated/
 
+#swagger
+frontend/src/services/swagger/
+
 # 编辑器与工具目录
 .husky/
 .idea/

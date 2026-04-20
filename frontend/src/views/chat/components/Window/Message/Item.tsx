@@ -1,4 +1,4 @@
-import type { Message } from 'types/chat';
+import type { Message } from '@/store/chat';
 import { memo } from 'react';
 import Markdown from '@/components/Markdown';
 import './item.scss';

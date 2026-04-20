@@ -5,9 +5,10 @@ import SessionBox from './components/Session';
 import ThemeSwitch from '@/components/ThemeSwitch';
 import User from './components/User';
 import ChatWindow from './components/Window';
-import type { Session } from 'types/chat';
-
+import type { RequestSessionListResponse } from '@/services/swagger/session';
 import './index.scss';
+
+type Session = RequestSessionListResponse['list'][number];
 
 const { Sider, Content } = Layout;
 
@@ -29,7 +30,7 @@ export default function ChatPage() {
       setCurSession(null);
       return;
     }
-    setCurSession((prev) => (prev?.id === sessionId ? prev : { id: sessionId }));
+    setCurSession((prev) => (prev?.id === sessionId ? prev : ({ id: sessionId } as Session)));
   }, [sessionId]);
 
   return (

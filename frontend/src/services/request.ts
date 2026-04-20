@@ -34,7 +34,6 @@ export const ApiResponseCode = {
  * axios实例
  */
 const axiosInstance: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_HTTP_BASE_URL,
   timeout: REQUEST_TIMEOUT,
   withCredentials: true
 });

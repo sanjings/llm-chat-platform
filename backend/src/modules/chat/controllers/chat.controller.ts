@@ -4,7 +4,7 @@ import { ChatDto } from '../dtos/chat.dto';
 import { type Response } from 'express';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { JwtPayload } from 'src/modules/auth/interfaces/jwt-payload.interface';
-import { ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiOkResponse, ApiOperation, ApiProduces, ApiTags } from '@nestjs/swagger';
 
 /** 边收大模型字节、边拼出「完整助手回复」，方便流结束后写入数据库（和供应商返回的 JSON 格式有关） */
 function accumulateAssistantFromSseChunk(
@@ -42,6 +42,8 @@ function accumulateAssistantFromSseChunk(
 
 @Controller('chat')
 @ApiTags('chat')
+@ApiProduces('text/event-stream')
+@ApiOkResponse({ schema: { type: 'string', example: 'data: {...}\\n\\n' } })
 export class ChatController {
   private readonly logger = new Logger(ChatController.name);
 
@@ -50,7 +52,7 @@ export class ChatController {
   @Post('stream')
   @ApiOperation({ summary: '流式聊天' })
   @ApiBody({ type: ChatDto })
-  @ApiOkResponse({ description: 'SSE 流式响应' })
+  @ApiProduces('text/event-stream')
   async chatStream(@Body() body: ChatDto, @CurrentUser() user: JwtPayload, @Res() res: Response) {
     const { stream, sessionId, provider } = await this.chatService.chatStream(
       user.sub,

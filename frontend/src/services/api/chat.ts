@@ -1,4 +1,4 @@
-import type { Message } from 'types/chat';
+import type { Message } from '@/store/chat';
 import { readStream } from '@/utils/stream';
 import { getCache } from '@/utils/cache';
 import { safeParse } from '@/utils';

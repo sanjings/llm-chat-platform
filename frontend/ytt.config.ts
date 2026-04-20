@@ -1,31 +1,36 @@
 // ytt.config.ts
 import { defineConfig } from 'yapi-to-typescript';
 
-const getFormatName = (str: string) => {
-  const index1 = str.indexOf('(');
-  const index2 = str.indexOf(')');
-  if (index2 !== -1) {
-    return str.substring(index1 + 1, index2);
-  }
-  return 'index';
+const getGroupFileName = (name?: string) => {
+  if (!name) return 'index';
+  return (
+    name
+      .trim()
+      .replace(/[^\w\u4e00-\u9fa5-]+/g, '-') // 非法字符替换
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
+      .toLowerCase() || 'index'
+  );
 };
 
 export default defineConfig([
   {
     serverUrl: 'http://localhost:3000/docs-json',
-    serverType: 'openapi',
+    serverType: 'swagger',
     target: 'typescript',
     typesOnly: false,
     prodEnvName: 'production',
-    outputFilePath: (interfaceInfo) => `src/services/swagger/${getFormatName(interfaceInfo._category.name)}.ts`,
-    requestFunctionFilePath: 'src/services/util.ts',
+    outputFilePath: (interfaceInfo) => `src/services/swagger/${getGroupFileName(interfaceInfo?._category?.name)}.ts`,
+    requestFunctionFilePath: 'src/services/ytt-request.ts',
     projects: [
       {
+        token: '', // swagger 不需要token
         categories: [
           {
             id: 0,
             getRequestFunctionName(interfaceInfo, changeCase) {
-              return `request${changeCase.pascalCase(interfaceInfo.path.replace(/\//g, ' '))}`;
+              const normalizedPath = interfaceInfo.path.replace(/^\/?api(?=\/|$)/i, '');
+              return `request${changeCase.pascalCase(normalizedPath.replace(/\//g, ' '))}`;
             }
           }
         ]

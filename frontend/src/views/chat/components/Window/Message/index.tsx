@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import type { Message } from 'types/chat';
+import type { Message } from '@/store/chat';
 import MsgItem from './Item';
 import './index.scss';
 

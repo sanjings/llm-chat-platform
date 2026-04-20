@@ -1,8 +1,18 @@
 import { create } from 'zustand';
 import { requestChat } from '@/services/api/chat';
-import { requestSessionMessages } from '@/services/api/session';
-import type { Message } from 'types/chat';
+import {
+  requestSessionMessagesSessionId,
+  type RequestSessionMessagesSessionIdResponse
+} from '@/services/swagger/session';
 import { ApiResponseCode } from '@/services/request';
+
+export type Message = PartialKey<
+  GetArrayItem<RequestSessionMessagesSessionIdResponse['list']>,
+  'id' | 'sessionId' | 'createTime'
+> & {
+  localId?: string;
+  requestId?: string;
+};
 
 export const DRAFT_SESSION_KEY = '__draft__';
 
@@ -112,7 +122,7 @@ export const useChatStore = create<ChatState>()((set, get) => ({
     }));
 
     try {
-      const res = await requestSessionMessages(sessionId);
+      const res = await requestSessionMessagesSessionId({ sessionId });
       if (res.code !== ApiResponseCode.SUCCESS) return;
 
       const list = (res.data.list || []).map((msg) => ({

@@ -1,12 +1,14 @@
-import { requestDeleteSession, requestSessionList } from '@/services/api/session';
+import { requestSessionList, requestSessionDeleteId } from '@/services/swagger/session';
 import { DeleteOutlined, EllipsisOutlined, FormOutlined, PlusCircleOutlined } from '@ant-design/icons';
 import { Button, Dropdown, message, Modal } from 'antd';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import type { Session } from 'types/chat';
+import type { RequestSessionListResponse } from '@/services/swagger/session';
 import './index.scss';
 import RenameModal from './Rename';
 import { ApiResponseCode } from '@/services/request';
+
+type Session = RequestSessionListResponse['list'][number];
 
 export default function SessionBox({
   listVersion,
@@ -36,7 +38,7 @@ export default function SessionBox({
   }, [sessionId, sessionList, onSelectSession]);
 
   const getSessionList = async () => {
-    const res = await requestSessionList({ pageNo: 1, pageSize: 5000 });
+    const res = await requestSessionList({ pageNo: '1', pageSize: '5000' });
     setSessionList(res.data.list || []);
   };
 
@@ -49,7 +51,7 @@ export default function SessionBox({
       okType: 'danger',
       cancelText: '取消',
       onOk: async () => {
-        const res = await requestDeleteSession(id);
+        const res = await requestSessionDeleteId({ id });
         if (res.code === ApiResponseCode.SUCCESS) {
           message.success('删除成功');
           getSessionList();

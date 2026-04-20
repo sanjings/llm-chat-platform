@@ -1,4 +1,4 @@
-import { requestLogin, requestRegisterAndLogin } from '@/services/api/auth';
+import { requestAuthLogin, requestAuthRegisterLogin } from '@/services/swagger/auth';
 import { Button, Form, Input, Segmented, Space, Typography, message } from 'antd';
 import { useState } from 'react';
 import { LoginMode } from './constant';
@@ -42,8 +42,8 @@ export default function LoginPage() {
               setLoading(true);
               const res =
                 mode === LoginMode.LOGIN
-                  ? await requestLogin({ phone: values.phone, password: values.password })
-                  : await requestRegisterAndLogin({
+                  ? await requestAuthLogin({ phone: values.phone, password: values.password })
+                  : await requestAuthRegisterLogin({
                       phone: values.phone,
                       password: values.password,
                       nickname: values.nickname

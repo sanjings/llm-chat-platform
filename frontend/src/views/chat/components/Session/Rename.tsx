@@ -1,6 +1,6 @@
 import { Input, message, Modal } from 'antd';
 import { useEffect, useState } from 'react';
-import { requestUpdateSessionTitle } from '@/services/api/session';
+import { requestSessionTitleUpdate } from '@/services/swagger/session';
 import { ApiResponseCode } from '@/services/request';
 
 export default function RenameModal({
@@ -30,7 +30,7 @@ export default function RenameModal({
   const submitRename = async () => {
     try {
       setConfirmLoading(true);
-      const res = await requestUpdateSessionTitle(sessionId!, title!);
+      const res = await requestSessionTitleUpdate({ id: sessionId, title: title });
       if (res.code === ApiResponseCode.SUCCESS) {
         onFinish();
         onCancel();
