@@ -51,7 +51,7 @@ export default function ChatWindow({ curSession, onSessionCreated, onSessionUpda
             <Skeleton active paragraph={{ rows: 8 }} title={false} />
           </div>
         ) : (
-          !isEmptyView && <ChatMessage messages={messages} />
+          !isEmptyView && <ChatMessage sessionKey={sessionKey} messages={messages} />
         )}
         <div>
           {isEmptyView && !showHistorySkeleton && <Model />}

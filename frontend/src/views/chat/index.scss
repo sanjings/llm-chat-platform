@@ -117,7 +117,7 @@
   &--desktop {
     .chat-page__shelf {
       width: 0;
-      transition: width 0.22s ease;
+      transition: width 0.2s ease;
     }
 
     &.chat-page--drawer-open .chat-page__shelf {
@@ -148,7 +148,7 @@
       z-index: 40;
       width: 0;
       border-inline-end: 0;
-      transition: width 0.22s ease;
+      transition: width 0.2s ease;
     }
 
     &.chat-page--drawer-open .chat-page__shelf {

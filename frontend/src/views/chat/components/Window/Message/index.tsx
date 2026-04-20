@@ -1,13 +1,20 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import type { Message } from '@/store/chat';
 import MsgItem from './Item';
 import './index.scss';
 
-export default function ChatBox({ messages }: { messages: Message[] }) {
+export default function ChatBox({ sessionKey, messages }: { sessionKey: string; messages: Message[] }) {
   const listRef = useRef<HTMLDivElement>(null);
   const ref = useRef<HTMLDivElement>(null);
   const shouldAutoScrollRef = useRef(true);
   const frameRef = useRef<number | null>(null);
+
+  useLayoutEffect(() => {
+    shouldAutoScrollRef.current = true;
+    const el = listRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+  }, [sessionKey]);
 
   useEffect(() => {
     if (!ref.current || !shouldAutoScrollRef.current) return;
