@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Skeleton } from 'antd';
 import ChatMessage from './Message/index';
 import Prompt from './Prompt/index';
@@ -7,6 +7,7 @@ import { type RequestSessionListResponse } from '@/services/swagger/session';
 import Model from './Model';
 import { DRAFT_SESSION_KEY, useChatStore } from '@/store/chat';
 import './index.scss';
+import { ModelType, ResponseFormatType } from '@/constants/chat';
 
 const EMPTY_MESSAGES: Message[] = [];
 
@@ -17,6 +18,7 @@ interface ChatViewProps {
 }
 
 export default function ChatWindow({ curSession, onSessionCreated, onSessionUpdated }: ChatViewProps) {
+  const [curModel, setCurModel] = useState<ModelType>(ModelType.QWEN_MAX);
   const sessionId = curSession?.id ?? null;
   const sessionKey = sessionId ?? DRAFT_SESSION_KEY;
   const setActiveSessionId = useChatStore((state) => state.setActiveSessionId);
@@ -39,7 +41,11 @@ export default function ChatWindow({ curSession, onSessionCreated, onSessionUpda
   }, [sessionId, setActiveSessionId, loadSessionMessages]);
 
   const handleSend = async (text: string) => {
-    await sendMessage(sessionId, text, { onSessionCreated, onSessionUpdated });
+    const modelForRequest = (curSession?.llmModelId?.trim() || curModel) as ModelType;
+    await sendMessage(sessionId, text, modelForRequest, ResponseFormatType.MARKDOWN, {
+      onSessionCreated,
+      onSessionUpdated
+    });
   };
 
   return (
@@ -54,7 +60,7 @@ export default function ChatWindow({ curSession, onSessionCreated, onSessionUpda
           !isEmptyView && <ChatMessage sessionKey={sessionKey} messages={messages} />
         )}
         <div>
-          {isEmptyView && !showHistorySkeleton && <Model />}
+          {isEmptyView && !showHistorySkeleton && <Model onChange={setCurModel} />}
           <Prompt sessionId={sessionId} onSend={handleSend} />
           {!isEmptyView && <p className="ai-tip">内容由 AI 生成，请仔细甄别</p>}
         </div>

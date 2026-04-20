@@ -31,7 +31,10 @@ export class ChatDto {
   @IsString()
   sessionId?: string;
 
-  /** v2 多模型切换时由前端传入；v1 可省略，使用 LLM_MODEL */
+  /**
+   * 多模型：传模型名或线路标识；命中后端映射则决定走 DashScope 还是 OpenAI 兼容网关。
+   * 已有 sessionId 且会话已绑定 llmModelId 时以库为准；若再传且与绑定不一致则 400。
+   */
   @ApiPropertyOptional({ example: 'qwen-max' })
   @IsOptional()
   @IsString()

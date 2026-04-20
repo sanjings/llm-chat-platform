@@ -24,6 +24,7 @@ export class SessionService {
         select: {
           id: true,
           title: true,
+          llmModelId: true,
           createTime: true,
           updateTime: true
         }
@@ -40,6 +41,7 @@ export class SessionService {
         id: true,
         title: true,
         userId: true,
+        llmModelId: true,
         createTime: true,
         updateTime: true
       }
@@ -98,9 +100,32 @@ export class SessionService {
     };
   }
 
-  async createSession(userId: string, firstMsg?: string) {
+  async createSession(userId: string, firstMsg?: string, llmModelId?: string) {
     const title = (firstMsg || '新对话').trim().slice(0, 20) || '新对话';
-    return this.prisma.session.create({ data: { title, userId } });
+    const mid = llmModelId?.trim();
+    return this.prisma.session.create({
+      data: { title, userId, ...(mid ? { llmModelId: mid } : {}) }
+    });
+  }
+
+  /** 流式对话前解析会话是否属于当前用户及其已绑定模型 */
+  async findSessionForChat(userId: string, sessionId: string): Promise<{ llmModelId: string | null } | null> {
+    const row = await this.prisma.session.findFirst({
+      where: { id: sessionId, userId },
+      select: { llmModelId: true }
+    });
+    return row ? { llmModelId: row.llmModelId } : null;
+  }
+
+  /** 旧数据或首条流式前：仅在尚未绑定时写入模型 */
+  async setSessionLlmModelIdIfNull(sessionId: string, userId: string, llmModelId: string) {
+    await this.assertSessionOwner(sessionId, userId);
+    const v = llmModelId.trim();
+    if (!v) return;
+    await this.prisma.session.updateMany({
+      where: { id: sessionId, userId, llmModelId: null },
+      data: { llmModelId: v }
+    });
   }
 
   async updateTitle(id: string, userId: string, title: string) {
