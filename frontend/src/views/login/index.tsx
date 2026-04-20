@@ -1,5 +1,5 @@
 import { requestAuthLogin, requestAuthRegisterLogin } from '@/services/swagger/auth';
-import { Button, Form, Input, Segmented, Space, Typography, message } from 'antd';
+import { Button, Form, Input, Space, Typography, message } from 'antd';
 import { useState } from 'react';
 import { LoginMode } from './constant';
 import { phoneReg } from '@/constants/reg';
@@ -13,7 +13,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const setToken = useUserStore((state) => state.setToken);
   const setUserInfo = useUserStore((state) => state.setUserInfo);
-  const [mode, setMode] = useState<LoginMode>(LoginMode.LOGIN);
+  const [mode] = useState<LoginMode>(LoginMode.LOGIN);
   const [loading, setLoading] = useState(false);
 
   return (
@@ -25,7 +25,7 @@ export default function LoginPage() {
           </Typography.Title>
           <ThemeSwitch />
         </Space>
-        <Segmented
+        {/* <Segmented
           block
           options={[
             { label: '登录', value: LoginMode.LOGIN },
@@ -33,9 +33,10 @@ export default function LoginPage() {
           ]}
           value={mode}
           onChange={(v) => setMode(v)}
-        />
+        /> */}
         <Form
           layout="vertical"
+          style={{ marginTop: 10 }}
           onFinish={async (values) => {
             try {
               setLoading(true);
