@@ -4,10 +4,11 @@
   font-size: 16px;
   line-height: 1.75;
   color: var(--app-text);
+  word-break: break-all;
   border-radius: 12px;
 
   &--user {
-    padding: 10px 16px;
+    padding: 10px 15px;
     background-color: var(--msg-user-bg);
   }
 

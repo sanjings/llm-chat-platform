@@ -1,12 +1,14 @@
 import { requestSessionList, requestSessionDeleteId } from '@/services/swagger/session';
 import { DeleteOutlined, EllipsisOutlined, FormOutlined, PlusCircleOutlined } from '@ant-design/icons';
 import { Button, Dropdown, message, Modal } from 'antd';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { RequestSessionListResponse } from '@/services/swagger/session';
 import './index.scss';
 import RenameModal from './Rename';
 import { ApiResponseCode } from '@/services/request';
+import { useAppStore } from '@/store/app';
+import { useNarrowLayout } from '@/hooks/useNarrowLayout';
 
 type Session = RequestSessionListResponse['list'][number];
 
@@ -20,14 +22,21 @@ export default function SessionBox({
   onCreateSession: () => void;
 }) {
   const navigate = useNavigate();
+  const narrowLayout = useNarrowLayout();
+  const setCollapsed = useAppStore((state) => state.setCollapsed);
   const { sessionId } = useParams();
   const [sessionList, setSessionList] = useState<Session[]>([]);
   const [curSession, setCurSession] = useState<Session | null>(null);
   const [renameOpen, setRenameOpen] = useState(false);
 
+  const getSessionList = useCallback(async () => {
+    const res = await requestSessionList({ pageNo: '1', pageSize: '5000' });
+    setSessionList(res.data.list || []);
+  }, []);
+
   useEffect(() => {
     getSessionList();
-  }, [listVersion]);
+  }, [listVersion, getSessionList]);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -36,11 +45,6 @@ export default function SessionBox({
       onSelectSession(matched);
     }
   }, [sessionId, sessionList, onSelectSession]);
-
-  const getSessionList = async () => {
-    const res = await requestSessionList({ pageNo: '1', pageSize: '5000' });
-    setSessionList(res.data.list || []);
-  };
 
   const onDeleteSession = async (id: string) => {
     Modal.confirm({
@@ -72,6 +76,9 @@ export default function SessionBox({
         size="large"
         block
         onClick={() => {
+          if (narrowLayout) {
+            setCollapsed(true);
+          }
           onCreateSession();
           navigate('/chat');
         }}>
@@ -84,6 +91,9 @@ export default function SessionBox({
             key={item.id}
             className={`session-list-item ${item.id === sessionId ? 'active' : ''}`}
             onClick={() => {
+              if (narrowLayout) {
+                setCollapsed(true);
+              }
               onSelectSession(item);
               navigate(`/chat/${item.id}`);
             }}>

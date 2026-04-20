@@ -40,6 +40,8 @@
 }
 
 body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
   overflow: hidden;
   font-family: 'PingFang SC', 'Microsoft YaHei', 'Source Han Sans CN', SimHei, sans-serif;
   font-size: 14px;
@@ -50,29 +52,8 @@ body {
 
 #root {
   width: 100%;
-  height: 100%;
-}
-
-.auth-page {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
   height: 100vh;
-  background: var(--app-bg);
-}
-
-.auth-card {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  width: 420px;
-  padding: 24px;
-  color: var(--app-text);
-  background: var(--surface-elevated);
-  border: 1px solid var(--border-subtle);
-  border-radius: 12px;
-  box-shadow: var(--shadow-input);
+  height: 100dvh;
 }
 
 /* 定义滚动条高宽及背景 高宽分别对应横竖滚动条的尺寸 */

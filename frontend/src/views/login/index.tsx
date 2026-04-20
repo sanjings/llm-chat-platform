@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { ApiResponseCode } from '@/services/request';
 import ThemeSwitch from '@/components/ThemeSwitch';
 import { useUserStore } from '@/store/user';
+import './index.scss';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -16,15 +17,13 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   return (
-    <div className="auth-page">
+    <div className="auth-page" style={{ paddingInline: 15 }}>
       <div className="auth-card">
         <Space style={{ width: '100%', justifyContent: 'space-between' }}>
           <Typography.Title level={3} style={{ margin: 0 }}>
             LLM Chat
           </Typography.Title>
-          <Space>
-            <ThemeSwitch />
-          </Space>
+          <ThemeSwitch />
         </Space>
         <Segmented
           block
