@@ -8,6 +8,7 @@ import './index.scss';
 import RenameModal from './Rename';
 import { ApiResponseCode } from '@/services/request';
 import { useAppStore } from '@/store/app';
+import { useChatStore } from '@/store/chat';
 import { useNarrowLayout } from '@/hooks/useNarrowLayout';
 
 type Session = RequestSessionListResponse['list'][number];
@@ -24,6 +25,7 @@ export default function SessionBox({
   const navigate = useNavigate();
   const narrowLayout = useNarrowLayout();
   const setCollapsed = useAppStore((state) => state.setCollapsed);
+  const removeSession = useChatStore((state) => state.removeSession);
   const { sessionId } = useParams();
   const [sessionList, setSessionList] = useState<Session[]>([]);
   const [curSession, setCurSession] = useState<Session | null>(null);
@@ -58,6 +60,10 @@ export default function SessionBox({
         const res = await requestSessionDeleteId({ id });
         if (res.code === ApiResponseCode.SUCCESS) {
           message.success('删除成功');
+          if (sessionId && id === sessionId) {
+            removeSession(id);
+            navigate('/chat', { replace: true });
+          }
           getSessionList();
         } else {
           message.error(res.message || '删除失败');

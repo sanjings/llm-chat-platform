@@ -27,7 +27,7 @@ export class ChatService {
     private readonly http: HttpService
   ) {}
 
-  /** 用环境变量决定走哪家 API；以后要做「多模型切换」主要也是改这里读配置 */
+  /** 用环境变量决定走哪家 API（未传 modelId 或 modelId 未命中映射时） */
   private llmProvider(): 'dashscope' | 'openai_compatible' {
     const p = (process.env.LLM_PROVIDER || 'dashscope').toLowerCase();
     if (p === 'openai_compatible' || p === 'openai' || p === 'deepseek') {
@@ -36,15 +36,49 @@ export class ChatService {
     return 'dashscope';
   }
 
+  /**
+   * 前端 modelId → 实际 provider + 上游 model。
+   * 未命中映射时：provider 仍看 LLM_PROVIDER，model 使用传入字符串（便于扩展新模型名）。
+   */
+  private readonly frontendModelMap: Record<string, { provider: 'dashscope' | 'openai_compatible'; model: string }> = {
+    dashscope: { provider: 'dashscope', model: 'qwen-max' },
+    openai_compatible: { provider: 'openai_compatible', model: 'deepseek-chat' },
+    openai: { provider: 'openai_compatible', model: 'deepseek-chat' },
+    deepseek: { provider: 'openai_compatible', model: 'deepseek-chat' },
+    'qwen-max': { provider: 'dashscope', model: 'qwen-max' },
+    'qwen-plus': { provider: 'dashscope', model: 'qwen-plus' },
+    'qwen-turbo': { provider: 'dashscope', model: 'qwen-turbo' },
+    'qwen2.5-72b-instruct': { provider: 'dashscope', model: 'qwen2.5-72b-instruct' },
+    'qwen2.5-32b-instruct': { provider: 'dashscope', model: 'qwen2.5-32b-instruct' },
+    'deepseek-chat': { provider: 'openai_compatible', model: 'deepseek-chat' },
+    'deepseek-reasoner': { provider: 'openai_compatible', model: 'deepseek-reasoner' }
+  };
+
   private resolveModel(explicit?: string): string {
     if (explicit?.trim()) return explicit.trim();
     if (process.env.LLM_MODEL) return process.env.LLM_MODEL;
     return this.llmProvider() === 'dashscope' ? 'qwen-max' : 'deepseek-chat';
   }
 
-  private resolveApiKey(): string {
+  /** 一次请求内用哪个网关、哪个模型名 */
+  private resolveLlmFromRequest(modelId?: string): {
+    provider: 'dashscope' | 'openai_compatible';
+    model: string;
+  } {
+    const raw = modelId?.trim();
+    if (!raw) {
+      return { provider: this.llmProvider(), model: this.resolveModel() };
+    }
+    const mapped = this.frontendModelMap[raw.toLowerCase()];
+    if (mapped) {
+      return { provider: mapped.provider, model: mapped.model };
+    }
+    return { provider: this.llmProvider(), model: raw };
+  }
+
+  private resolveApiKeyFor(provider: 'dashscope' | 'openai_compatible'): string {
     if (process.env.LLM_API_KEY) return process.env.LLM_API_KEY;
-    if (this.llmProvider() === 'dashscope' && process.env.DASHSCOPE_API_KEY) {
+    if (provider === 'dashscope' && process.env.DASHSCOPE_API_KEY) {
       return process.env.DASHSCOPE_API_KEY;
     }
     throw new Error('请配置 LLM_API_KEY（用通义时可继续用 DASHSCOPE_API_KEY）');
@@ -91,11 +125,13 @@ export class ChatService {
     return merged;
   }
 
-  async sendMsg(userId: string, role: string, content: string, sessionId?: string) {
-    let realSessionId = sessionId;
+  async sendMsg(userId: string, role: string, content: string, sessionId?: string, opts?: { llmModelId?: string }) {
+    let realSessionId = sessionId?.trim() || undefined;
     if (!realSessionId || !(await this.sessionService.existSession(realSessionId, userId))) {
-      const newSession = await this.sessionService.createSession(userId, content);
+      const newSession = await this.sessionService.createSession(userId, content, opts?.llmModelId);
       realSessionId = newSession.id;
+    } else if (opts?.llmModelId?.trim()) {
+      await this.sessionService.setSessionLlmModelIdIfNull(realSessionId, userId, opts.llmModelId.trim());
     }
 
     const dbRole = lowerCaseToRole(role);
@@ -118,12 +154,34 @@ export class ChatService {
   ) {
     const normalizedMessages = this.normalizeContext(messages, responseFormat);
     const userContent = normalizedMessages[normalizedMessages.length - 1].content;
-    const msg = await this.sendMsg(userId, 'user', userContent, sessionId);
-    const realSessionId = msg.sessionId;
-    const model = this.resolveModel(modelId);
-    const key = this.resolveApiKey();
 
-    if (this.llmProvider() === 'dashscope') {
+    let effectiveSessionId = sessionId?.trim() || undefined;
+    let boundModelId: string | null = null;
+    if (effectiveSessionId) {
+      const binding = await this.sessionService.findSessionForChat(userId, effectiveSessionId);
+      if (!binding) {
+        effectiveSessionId = undefined;
+      } else {
+        boundModelId = binding.llmModelId?.trim() || null;
+      }
+    }
+
+    const reqModel = modelId?.trim();
+    if (boundModelId && reqModel && reqModel.toLowerCase() !== boundModelId.toLowerCase()) {
+      throw new BadRequestException('当前会话已绑定模型，不可切换或与绑定不一致');
+    }
+
+    const effectiveModelInput = boundModelId || reqModel || undefined;
+    const { provider, model } = this.resolveLlmFromRequest(effectiveModelInput);
+    const persistModelId = boundModelId ? undefined : reqModel || model;
+
+    const msg = await this.sendMsg(userId, 'user', userContent, effectiveSessionId, {
+      llmModelId: persistModelId
+    });
+    const realSessionId = msg.sessionId;
+    const key = this.resolveApiKeyFor(provider);
+
+    if (provider === 'dashscope') {
       const res = await firstValueFrom(
         this.http.post(
           'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation',
@@ -153,6 +211,7 @@ export class ChatService {
 
     const base = (process.env.LLM_BASE_URL || 'https://api.deepseek.com/v1').replace(/\/$/, '');
     const openaiMessages = normalizedMessages.map((m) => ({ role: m.role, content: m.content }));
+
     const res = await firstValueFrom(
       this.http.post(
         `${base}/chat/completions`,
@@ -167,6 +226,7 @@ export class ChatService {
         }
       )
     );
+
     return {
       stream: res.data as NodeJS.ReadableStream,
       sessionId: realSessionId,

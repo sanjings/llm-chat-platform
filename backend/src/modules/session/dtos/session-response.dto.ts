@@ -8,6 +8,9 @@ export class SessionItemDto {
   @ApiProperty()
   title: string;
 
+  @ApiPropertyOptional({ type: String, nullable: true, description: '会话绑定的模型标识，首条对话后写入' })
+  llmModelId?: string | null;
+
   @ApiProperty({ type: String, format: 'date-time' })
   createTime: Date;
 

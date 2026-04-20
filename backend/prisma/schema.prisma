@@ -12,13 +12,15 @@ generator client {
 }
 
 model Session {
-  id         String    @id @default(uuid())
-  title      String
-  userId     String
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages   Message[]
-  createTime DateTime  @default(now())
-  updateTime DateTime  @updatedAt
+  id          String    @id @default(uuid())
+  title       String
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages    Message[]
+  /** 本会话绑定的前端模型标识（如 qwen-max）；首条对话写入后不可切换 */
+  llmModelId  String?
+  createTime  DateTime  @default(now())
+  updateTime  DateTime  @updatedAt
 
   @@index([userId, updateTime])
 }

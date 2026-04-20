@@ -5,6 +5,7 @@ import {
   type RequestSessionMessagesSessionIdResponse
 } from '@/services/swagger/session';
 import { ApiResponseCode } from '@/services/request';
+import { ModelType, ResponseFormatType } from '@/constants/chat';
 
 export type Message = PartialKey<
   GetArrayItem<RequestSessionMessagesSessionIdResponse['list']>,
@@ -35,8 +36,16 @@ type ChatState = {
   streamBySession: Record<string, SessionStreamState>;
   loadingBySession: Record<string, boolean>;
   setActiveSessionId: (sessionId: string | null) => void;
+  /** 移除本地缓存的消息与流状态，并中止该会话的请求（用于会话被删除等场景） */
+  removeSession: (sessionId: string) => void;
   loadSessionMessages: (sessionId: string, force?: boolean) => Promise<void>;
-  sendMessage: (sessionId: string | null, text: string, options?: SendMessageOptions) => Promise<void>;
+  sendMessage: (
+    sessionId: string | null,
+    text: string,
+    modelId?: ModelType,
+    responseFormat?: ResponseFormatType,
+    options?: SendMessageOptions
+  ) => Promise<void>;
   stopSessionStream: (sessionId: string | null) => void;
 };
 
@@ -110,6 +119,33 @@ export const useChatStore = create<ChatState>()((set, get) => ({
       return { activeSessionId: sessionId };
     }),
 
+  removeSession: (sessionId) => {
+    const sessionKey = getSessionKey(sessionId);
+    controllers.get(sessionKey)?.abort();
+    controllers.delete(sessionKey);
+    const rafId = rafIds.get(sessionKey);
+    if (rafId !== undefined) {
+      cancelAnimationFrame(rafId);
+      rafIds.delete(sessionKey);
+    }
+    buffers.delete(sessionKey);
+
+    set((state) => {
+      const nextMessages = { ...state.messagesBySession };
+      const nextStream = { ...state.streamBySession };
+      const nextLoading = { ...state.loadingBySession };
+      delete nextMessages[sessionKey];
+      delete nextStream[sessionKey];
+      delete nextLoading[sessionKey];
+      return {
+        messagesBySession: nextMessages,
+        streamBySession: nextStream,
+        loadingBySession: nextLoading,
+        activeSessionId: state.activeSessionId === sessionId ? null : state.activeSessionId
+      };
+    });
+  },
+
   loadSessionMessages: async (sessionId, force = false) => {
     const exists = get().messagesBySession[sessionId];
     if (!force && exists?.length) return;
@@ -146,7 +182,7 @@ export const useChatStore = create<ChatState>()((set, get) => ({
     }
   },
 
-  sendMessage: async (sessionId, text, options) => {
+  sendMessage: async (sessionId, text, modelId, responseFormat = ResponseFormatType.MARKDOWN, options) => {
     const content = text.trim();
     if (!content) return;
 
@@ -219,8 +255,9 @@ export const useChatStore = create<ChatState>()((set, get) => ({
       const baseMessages = get().messagesBySession[sessionKey] || [];
       const normalizedPayload = buildRequestMessages(baseMessages);
       const result = await requestChat(normalizedPayload, sessionId, enqueueDelta, {
-        signal: controller.signal,
-        responseFormat: 'markdown'
+        modelId,
+        responseFormat,
+        signal: controller.signal
       });
 
       if (rafIds.has(sessionKey)) {
@@ -263,7 +300,6 @@ export const useChatStore = create<ChatState>()((set, get) => ({
         rafIds.delete(sessionKey);
       }
       flushDelta();
-
       const aborted = error instanceof DOMException && error.name === 'AbortError';
       set((state) => ({
         streamBySession: {

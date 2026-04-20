@@ -61,6 +61,10 @@ export interface RequestSessionListResponse {
   list: {
     id: string
     title: string
+    /**
+     * 会话绑定的模型标识，首条对话后写入
+     */
+    llmModelId?: string
     createTime: string
     updateTime: string
   }[]
@@ -245,6 +249,10 @@ export interface RequestSessionDetailIdRequest {
 export interface RequestSessionDetailIdResponse {
   id: string
   title: string
+  /**
+   * 会话绑定的模型标识，首条对话后写入
+   */
+  llmModelId?: string
   createTime: string
   updateTime: string
   userId: string
@@ -318,6 +326,10 @@ export interface RequestSessionCreateRequest {}
 export interface RequestSessionCreateResponse {
   id: string
   title: string
+  /**
+   * 会话绑定的模型标识，首条对话后写入
+   */
+  llmModelId?: string
   createTime: string
   updateTime: string
 }
@@ -393,6 +405,10 @@ export interface RequestSessionTitleUpdateRequest {
 export interface RequestSessionTitleUpdateResponse {
   id: string
   title: string
+  /**
+   * 会话绑定的模型标识，首条对话后写入
+   */
+  llmModelId?: string
   createTime: string
   updateTime: string
 }
@@ -470,6 +486,10 @@ export interface RequestSessionDeleteIdRequest {
 export interface RequestSessionDeleteIdResponse {
   id: string
   title: string
+  /**
+   * 会话绑定的模型标识，首条对话后写入
+   */
+  llmModelId?: string
   createTime: string
   updateTime: string
 }
