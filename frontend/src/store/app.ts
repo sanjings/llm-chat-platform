@@ -1,3 +1,4 @@
+import { isMobile } from '@/utils/env';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
@@ -19,10 +20,14 @@ export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
       themeMode: AppTheme.LIGHT,
-      collapsed: false,
+      collapsed: !!isMobile,
       setThemeMode: (themeMode: AppTheme) => set({ themeMode }),
       setCollapsed: (collapsed: boolean) => set({ collapsed })
     }),
-    { name: 'STORE_APP', storage: createJSONStorage(() => localStorage) }
+    {
+      name: 'STORE_APP',
+      partialize: (state) => ({ themeMode: state.themeMode }),
+      storage: createJSONStorage(() => localStorage)
+    }
   )
 );

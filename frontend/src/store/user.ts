@@ -18,7 +18,10 @@ export const useUserStore = create<UserState>()(
       userInfo: null,
       setToken: (token: string) => set({ token }),
       setUserInfo: (userInfo: RequestAuthLoginResponse['userInfo']) => set({ userInfo }),
-      logout: () => set({ token: null, userInfo: null })
+      logout: () => {
+        set({ token: null, userInfo: null });
+        window.location.replace('/login');
+      }
     }),
     { name: 'STORE_USER', storage: customJSONStorage }
   )
