@@ -195,7 +195,6 @@ axiosInstance.interceptors.response.use(
       cancelAllPendingRequests('登录已过期');
       message.error('登录已过期，请重新登录');
       useUserStore.getState().logout();
-      window.location.replace('/login');
       return Promise.reject(resData);
     }
 

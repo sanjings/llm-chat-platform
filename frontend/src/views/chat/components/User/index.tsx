@@ -22,7 +22,6 @@ const User: React.FC = () => {
       icon: <LogoutOutlined />,
       onClick: () => {
         useUserStore.getState().logout();
-        window.location.replace('/login');
       }
     }
   ];

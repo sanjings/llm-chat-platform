@@ -1,54 +1,72 @@
-import { useEffect, useLayoutEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import type { Message } from '@/store/chat';
 import MsgItem from './Item';
 import './index.scss';
 
-export default function ChatBox({ sessionKey, messages }: { sessionKey: string; messages: Message[] }) {
-  const listRef = useRef<HTMLDivElement>(null);
-  const ref = useRef<HTMLDivElement>(null);
-  const shouldAutoScrollRef = useRef(true);
-  const frameRef = useRef<number | null>(null);
+export interface ChatBoxRef {
+  scrollToBottom: () => void;
+}
 
-  useLayoutEffect(() => {
-    shouldAutoScrollRef.current = true;
-    const el = listRef.current;
-    if (!el) return;
-    el.scrollTop = el.scrollHeight;
-  }, [sessionKey]);
+const ChatBox = forwardRef<ChatBoxRef, { sessionKey: string; messages: Message[] }>(
+  ({ sessionKey, messages }, forwardedRef) => {
+    const listRef = useRef<HTMLDivElement>(null);
+    const bottomRef = useRef<HTMLDivElement>(null);
+    const shouldAutoScrollRef = useRef(true);
+    const frameRef = useRef<number | null>(null);
 
-  useEffect(() => {
-    if (!ref.current || !shouldAutoScrollRef.current) return;
-    if (frameRef.current != null) {
-      cancelAnimationFrame(frameRef.current);
-    }
-    frameRef.current = requestAnimationFrame(() => {
-      ref.current?.scrollIntoView({ behavior: 'auto' });
-      frameRef.current = null;
-    });
-  }, [messages]);
+    const scrollToBottom = () => {
+      shouldAutoScrollRef.current = true;
+      const el = listRef.current;
+      if (!el) return;
+      el.scrollTop = el.scrollHeight;
+    };
 
-  useEffect(() => {
-    return () => {
+    useLayoutEffect(() => {
+      scrollToBottom();
+    }, [sessionKey]);
+
+    useEffect(() => {
+      if (!bottomRef.current || !shouldAutoScrollRef.current) return;
       if (frameRef.current != null) {
         cancelAnimationFrame(frameRef.current);
       }
+      frameRef.current = requestAnimationFrame(() => {
+        bottomRef.current?.scrollIntoView({ behavior: 'auto' });
+        frameRef.current = null;
+      });
+    }, [messages]);
+
+    useEffect(() => {
+      return () => {
+        if (frameRef.current != null) {
+          cancelAnimationFrame(frameRef.current);
+        }
+      };
+    }, []);
+
+    useImperativeHandle(forwardedRef, () => ({
+      scrollToBottom
+    }));
+
+    const onScroll = () => {
+      const el = listRef.current;
+      if (!el) return;
+      const threshold = 80;
+      const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+      shouldAutoScrollRef.current = distanceToBottom <= threshold;
     };
-  }, []);
 
-  const onScroll = () => {
-    const el = listRef.current;
-    if (!el) return;
-    const threshold = 80;
-    const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    shouldAutoScrollRef.current = distanceToBottom <= threshold;
-  };
+    return (
+      <div className="message-list" ref={listRef} onScroll={onScroll}>
+        {messages?.map((m, i) => (
+          <MsgItem key={m.localId || m.id || `${m.role}-${i}`} msg={m} />
+        ))}
+        <div ref={bottomRef} />
+      </div>
+    );
+  }
+);
 
-  return (
-    <div className="message-list" ref={listRef} onScroll={onScroll}>
-      {messages?.map((m, i) => (
-        <MsgItem key={m.localId || m.id || `${m.role}-${i}`} msg={m} />
-      ))}
-      <div ref={ref} />
-    </div>
-  );
-}
+ChatBox.displayName = 'ChatBox';
+
+export default ChatBox;

@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Skeleton } from 'antd';
-import ChatMessage from './Message/index';
+import ChatMessage, { type ChatBoxRef } from './Message/index';
 import Prompt from './Prompt/index';
 import type { Message } from '@/store/chat';
 import { type RequestSessionListResponse } from '@/services/swagger/session';
@@ -21,6 +21,7 @@ export default function ChatWindow({ curSession, onSessionCreated, onSessionUpda
   const [curModel, setCurModel] = useState<ModelType>(ModelType.QWEN_MAX);
   const sessionId = curSession?.id ?? null;
   const sessionKey = sessionId ?? DRAFT_SESSION_KEY;
+  const chatBoxRef = useRef<ChatBoxRef>(null);
   const setActiveSessionId = useChatStore((state) => state.setActiveSessionId);
   const loadSessionMessages = useChatStore((state) => state.loadSessionMessages);
   const sendMessage = useChatStore((state) => state.sendMessage);
@@ -42,10 +43,12 @@ export default function ChatWindow({ curSession, onSessionCreated, onSessionUpda
 
   const handleSend = async (text: string) => {
     const modelForRequest = (curSession?.llmModelId?.trim() || curModel) as ModelType;
-    await sendMessage(sessionId, text, modelForRequest, ResponseFormatType.MARKDOWN, {
+    const sendTask = sendMessage(sessionId, text, modelForRequest, ResponseFormatType.MARKDOWN, {
       onSessionCreated,
       onSessionUpdated
     });
+    chatBoxRef.current?.scrollToBottom();
+    await sendTask;
   };
 
   return (
@@ -57,7 +60,7 @@ export default function ChatWindow({ curSession, onSessionCreated, onSessionUpda
             <Skeleton active paragraph={{ rows: 8 }} title={false} />
           </div>
         ) : (
-          !isEmptyView && <ChatMessage sessionKey={sessionKey} messages={messages} />
+          !isEmptyView && <ChatMessage ref={chatBoxRef} sessionKey={sessionKey} messages={messages} />
         )}
         <div>
           {isEmptyView && !showHistorySkeleton && <Model onChange={setCurModel} />}

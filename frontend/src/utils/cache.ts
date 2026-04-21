@@ -21,18 +21,23 @@ export const setCache = <T = unknown>(key: string, value: T, expires: number = 3
  * @returns 缓存value
  */
 export const getCache = <T = unknown>(key: string): T | null => {
-  const dataStr = localStorage.getItem(key);
-  if (!dataStr) return null;
-  const cache = JSON.parse(dataStr);
-  if (cache?.expires && cache?.expires < Date.now()) {
-    removeCache(key);
+  try {
+    const dataStr = localStorage.getItem(key);
+    if (!dataStr) return null;
+    const cache = JSON.parse(dataStr);
+    if (cache?.expires && cache?.expires < Date.now()) {
+      removeCache(key);
+      return null;
+    }
+    if (cache?.version && cache?.version !== VITE_CACHE_VERSION) {
+      removeCache(key);
+      return null;
+    }
+    return (cache?.value ? cache.value : cache || null) as T;
+  } catch (error) {
+    console.log(`getCache error ${key}`, error);
     return null;
   }
-  if (cache?.version && cache?.version !== VITE_CACHE_VERSION) {
-    removeCache(key);
-    return null;
-  }
-  return (cache?.value ? cache.value : cache || null) as T;
 };
 
 /**
