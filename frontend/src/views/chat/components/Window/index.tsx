@@ -47,7 +47,9 @@ export default function ChatWindow({ curSession, onSessionCreated, onSessionUpda
       onSessionCreated,
       onSessionUpdated
     });
-    chatBoxRef.current?.scrollToBottom();
+    requestAnimationFrame(() => {
+      chatBoxRef.current?.scrollToBottom();
+    });
     await sendTask;
   };
 
