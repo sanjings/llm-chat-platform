@@ -1,6 +1,6 @@
 ---
 name: chat-session-streaming-frontend
-description: Implement and debug frontend multi-session streaming chat behavior. Use when the user mentions conversation switching, stream rendering isolation, stop generation, first-message display, or history skeleton layout in the chat UI.
+description: Implement and debug frontend multi-session streaming chat behavior in this repository. Use when requests mention conversation switching, stream rendering isolation, stop generation, first-message display, draft session migration, or chat window layout regressions.
 ---
 
 # Chat Session Streaming Frontend
@@ -14,38 +14,54 @@ description: Implement and debug frontend multi-session streaming chat behavior.
 - `frontend/src/views/chat/components/Window/Message/index.tsx`
 - `frontend/src/views/chat/components/Window/Prompt/index.tsx`
 - `frontend/src/services/api/chat.ts`
+- `frontend/src/utils/stream.ts`
+
+## Project Conventions
+
+- Load [project-js-fullstack-conventions](../project-js-fullstack-conventions/SKILL.md) before coding.
+- Prefer arrow functions for new callbacks/helpers unless framework constraints require `function`.
+- Keep code readable and direct; avoid adding extra abstraction layers for one-off logic.
 
 ## Hard Rules
 
-1. Runtime state must be keyed by session (`messagesBySession`, `streamBySession`, `loadingBySession`).
-2. Stream updates must target `sessionId + requestId`; never append blindly to current visible list.
-3. Outbound payload must not include empty assistant placeholders; last message must be user.
-4. Empty/new-window UI logic must use `messages.length`, not only route `sessionId`.
-5. History skeleton container must keep `flex: 1` so prompt stays at bottom.
+1. Runtime state remains keyed by session (`messagesBySession`, `streamBySession`, `loadingBySession`).
+2. Stream updates always target `sessionKey + requestId`; never append by current visible panel.
+3. Outbound payload is normalized from local state and ends with user message.
+4. Draft session (`__draft__`) migration to returned `session-id` must preserve messages and stream state.
+5. Stop action only aborts the current session controller and preserves generated assistant text.
+6. Empty/new-window rendering logic uses message length, not only route param.
+7. Chat layout keeps prompt pinned at bottom (`flex: 1` handling in history container).
 
 ## Workflow
 
-1. Confirm selected session object (`id`, `title`) and route param stay in sync.
-2. For stream send:
-   - write local optimistic user + assistant placeholder
-   - normalize payload
-   - enqueue delta and flush in batches (rAF)
-3. For switching sessions:
-   - do not auto-abort other sessions
-   - ensure active panel subscribes to the selected session key only
-4. For stop:
-   - abort only the current session controller
-   - keep already generated text
+1. Confirm route session id and selected session id stay in sync.
+2. In `sendMessage`:
+   - append optimistic user + assistant placeholder to the target session key
+   - compute normalized request payload from store messages
+   - stream deltas through buffered flush (rAF batching)
+3. In stream parser:
+   - keep compatibility for OpenAI-compatible delta chunks
+   - keep compatibility for DashScope full-text chunks
+4. In session switching:
+   - never auto-abort unrelated session streams
+   - subscribe UI rendering to selected session key only
+5. In stop behavior:
+   - set status to stopped
+   - avoid clearing already received assistant content
 
-## Regression Checklist
+## Frequent Regression Patterns
 
-- A streaming while viewing B does not pollute B.
-- Returning to A shows ongoing stream or completed content.
-- First send in new chat renders immediately.
-- Stop affects only current session.
-- Skeleton does not lift the input box.
+- Cross-session pollution when flushing buffered deltas without request guard.
+- First message in new chat not rendered until session list reload.
+- Accidentally sending empty assistant placeholder to backend.
+- Skeleton or loading container pushes prompt upward.
+- Abort logic cancels wrong session due to shared controller key mistakes.
 
 ## Verification
 
 - `pnpm -C frontend exec tsc --noEmit`
-- Check lints on changed files.
+- Check lints on changed frontend files.
+- Manual:
+  - Start stream in session A, switch to B, ensure B stays clean.
+  - Start first message in draft chat, verify immediate render and draft->real session migration.
+  - Stop current stream and confirm other sessions continue normally.
