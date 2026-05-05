@@ -9,9 +9,9 @@ apps/backend/.env
 # 构建产物
 **/dist/
 **/build/
-backend/src/generated/
-backend/generated/
-frontend/stats.*
+apps/backend/src/generated/
+apps/backend/generated/
+apps/frontend/portal/stats.*
 .turbo/
 
 # 日志
@@ -52,4 +52,4 @@ coverage/
 .husky/_/
 
 # Prisma - 生成的客户端缓存
-backend/.prisma/
+apps/backend/.prisma/
