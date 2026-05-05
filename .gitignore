@@ -12,6 +12,7 @@ backend/.env
 backend/src/generated/
 backend/generated/
 frontend/stats.*
+.turbo/
 
 # 日志
 logs/

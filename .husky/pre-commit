@@ -2,7 +2,7 @@
 . "$(dirname -- "$0")/_/husky.sh"
 
 echo "🔍 正在检查 TypeScript 类型..."
-npm run tsc
+pnpm run tsc
 
 echo "🔧 正在格式化并修复代码..."
-npx --no-install lint-staged
+pnpm exec lint-staged

@@ -7,14 +7,14 @@ description: Implement and debug frontend multi-session streaming chat behavior 
 
 ## Scope
 
-- `frontend/src/store/chat.ts`
-- `frontend/src/views/chat/index.tsx`
-- `frontend/src/views/chat/components/Session/index.tsx`
-- `frontend/src/views/chat/components/Window/index.tsx`
-- `frontend/src/views/chat/components/Window/Message/index.tsx`
-- `frontend/src/views/chat/components/Window/Prompt/index.tsx`
-- `frontend/src/services/api/chat.ts`
-- `frontend/src/utils/stream.ts`
+- `apps/frontend/portal/src/store/chat.ts`
+- `apps/frontend/portal/src/views/chat/index.tsx`
+- `apps/frontend/portal/src/views/chat/components/Session/index.tsx`
+- `apps/frontend/portal/src/views/chat/components/Window/index.tsx`
+- `apps/frontend/portal/src/views/chat/components/Window/Message/index.tsx`
+- `apps/frontend/portal/src/views/chat/components/Window/Prompt/index.tsx`
+- `apps/frontend/portal/src/services/api/chat.ts`
+- `apps/frontend/portal/src/utils/stream.ts`
 
 ## Project Conventions
 
@@ -59,7 +59,7 @@ description: Implement and debug frontend multi-session streaming chat behavior 
 
 ## Verification
 
-- `pnpm -C frontend exec tsc --noEmit`
+- `pnpm --filter @llm-chat-platform/portal exec tsc --noEmit`
 - Check lints on changed frontend files.
 - Manual:
   - Start stream in session A, switch to B, ensure B stays clean.

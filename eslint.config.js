@@ -5,16 +5,16 @@ import { createRequire } from 'node:module';
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
-import reactRefreshPlugin from './frontend/node_modules/eslint-plugin-react-refresh/index.js';
+import reactRefreshPlugin from './apps/frontend/portal/node_modules/eslint-plugin-react-refresh/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const requireFrontend = createRequire(path.join(__dirname, 'frontend', 'package.json'));
+const requireFrontend = createRequire(path.join(__dirname, 'apps/frontend/portal', 'package.json'));
 
 const pluginReact = requireFrontend('eslint-plugin-react');
 const pluginReactHooks = requireFrontend('eslint-plugin-react-hooks');
 const globals = requireFrontend('globals');
 
-/** 从 frontend 包解析插件（React 相关依赖保留在子包） */
+/** 从 portal 包解析插件（React 相关依赖保留在子包） */
 const reactRecommended = pluginReact.configs.flat.recommended;
 const reactJsxRuntime = pluginReact.configs.flat['jsx-runtime'];
 const reactHooksRecommended = pluginReactHooks.configs.flat.recommended;
@@ -33,10 +33,10 @@ export default tseslint.config(
       '**/*.config.js',
       'lint-staged.config.mjs',
       '**/generated/**',
-      'backend/prisma/**',
+      'apps/backend/prisma/**',
       '**/*.d.ts',
-      'backend/prisma/migrations/**',
-      'backend/src/generated/**'
+      'apps/backend/prisma/migrations/**',
+      'apps/backend/src/generated/**'
     ]
   },
   eslint.configs.recommended,
@@ -52,7 +52,7 @@ export default tseslint.config(
     }
   },
   {
-    files: ['backend/**/*.ts'],
+    files: ['apps/backend/**/*.ts'],
     languageOptions: {
       globals: {
         ...globals.node
@@ -65,7 +65,7 @@ export default tseslint.config(
     }
   },
   {
-    files: ['frontend/**/*.{js,jsx,mjs,cjs,ts,tsx}'],
+    files: ['apps/frontend/portal/**/*.{js,jsx,mjs,cjs,ts,tsx}'],
     plugins: {
       ...reactRecommended.plugins,
       ...reactHooksRecommended.plugins,

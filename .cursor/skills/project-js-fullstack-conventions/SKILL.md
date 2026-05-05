@@ -44,8 +44,8 @@ Provide shared coding and delivery rules for `llm-chat-platform` so changes do n
 
 ## Layer Verification Commands
 
-- Frontend changes: `pnpm -C frontend exec tsc --noEmit`
-- Backend changes: `pnpm -C backend run tsc`
+- Portal changes: `pnpm --filter @llm-chat-platform/portal exec tsc --noEmit`
+- Backend changes: `pnpm --filter @llm-chat-platform/backend run tsc`
 - Cross-layer changes: run both commands above.
 
 ## Frontend Checklist

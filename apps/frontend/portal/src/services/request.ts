@@ -4,6 +4,7 @@ import { safeStringify } from '@/utils';
 import { useUserStore } from '@/store/user';
 import type { AxiosInstance, AxiosResponse, AxiosRequestConfig, InternalAxiosRequestConfig, AxiosError } from 'axios';
 import { type ApiResponseData } from 'types/api.d';
+import { requestAuthRefresh } from '@/services/swagger/auth';
 
 /**
  * 常量定义
@@ -76,7 +77,7 @@ const removePendingRequest = (requestKey?: string) => {
 };
 
 /**
- * 取消所有待处理的请求
+ * 取消所有进行中的请求（仅在确定会话失效、即将退出登录时调用，勿在「首次 401 尝试 refresh」时调用，否则会打断仍可挽救的请求）
  */
 const cancelAllPendingRequests = (reason = '请求被取消') => {
   pendingRequests.forEach((controller) => {
@@ -84,6 +85,38 @@ const cancelAllPendingRequests = (reason = '请求被取消') => {
   });
   pendingRequests.clear();
 };
+
+/** refresh 已失败或不应再刷新：中止其余未完成请求并登出 */
+const logoutDueToExpiredSession = () => {
+  cancelAllPendingRequests('登录已过期');
+  message.error('登录已过期，请重新登录');
+  useUserStore.getState().logout();
+};
+
+const refreshToken = async () => {
+  const res = await requestAuthRefresh({ refreshToken: useUserStore.getState().refreshToken as string });
+  if (res.code === ApiResponseCode.SUCCESS) {
+    useUserStore.getState().setToken(res.data.accessToken);
+    useUserStore.getState().setRefreshToken(res.data.refreshToken);
+    return true;
+  } else {
+    return false;
+  }
+};
+
+/** 并发 401 时共用一个 refresh，避免重复打 refresh 接口 */
+let refreshPromise: Promise<boolean> | null = null;
+
+const getOrCreateRefreshPromise = (): Promise<boolean> => {
+  if (!refreshPromise) {
+    refreshPromise = refreshToken().finally(() => {
+      refreshPromise = null;
+    });
+  }
+  return refreshPromise;
+};
+
+type RetryableInternalConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 
 /**
  * 请求拦截器
@@ -191,11 +224,30 @@ axiosInstance.interceptors.response.use(
     resData.code = Number(resData.code);
 
     if (resData.code === ApiResponseCode.UNAUTHORIZED) {
-      // 取消所有待处理的请求
-      cancelAllPendingRequests('登录已过期');
-      message.error('登录已过期，请重新登录');
-      useUserStore.getState().logout();
-      return Promise.reject(resData);
+      const originalConfig = config as RetryableInternalConfig;
+
+      // refresh 本身失败或已重试仍 401：不再刷新，直接退出登录
+      if (originalConfig._retry || originalConfig.url?.includes(requestAuthRefresh.requestConfig.path)) {
+        logoutDueToExpiredSession();
+        return Promise.reject(resData);
+      }
+
+      originalConfig._retry = true;
+
+      return getOrCreateRefreshPromise().then(
+        (ok) => {
+          if (!ok) {
+            logoutDueToExpiredSession();
+            return Promise.reject(resData);
+          }
+          // 请求拦截器会从 store 读取新 token
+          return axiosInstance(originalConfig);
+        },
+        () => {
+          logoutDueToExpiredSession();
+          return Promise.reject(resData);
+        }
+      );
     }
 
     return resData;

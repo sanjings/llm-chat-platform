@@ -1,7 +1,8 @@
 {
-  "name": "frontend",
+  "name": "@llm-chat-platform/portal",
+  "version": "1.0.0",
+  "description": "LLM Chat Platform Portal (用户端)",
   "private": true,
-  "version": "0.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -28,8 +29,11 @@
     "remark-gfm": "^4.0.1",
     "zustand": "^5.0.12"
   },
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "devDependencies": {
-    "@types/node": "^24.12.2",
+    "@types/node": "catalog:",
     "@types/react": "^19.2.14",
     "@types/react-copy-to-clipboard": "^5.0.7",
     "@types/react-dom": "^19.2.3",
@@ -38,24 +42,20 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
-    "globals": "^17.4.0",
+    "globals": "catalog:",
     "lightningcss": "^1.32.0",
     "postcss-html": "^1.8.1",
     "postcss-scss": "^4.0.9",
-    "prettier": "^3.8.3",
     "rollup-plugin-visualizer": "^7.0.1",
     "sass-embedded": "^1.99.0",
     "stylelint": "^17.6.0",
     "stylelint-config-recess-order": "^7.7.0",
     "stylelint-config-recommended-scss": "^17.0.1",
     "stylelint-prettier": "^5.0.3",
-    "typescript": "~6.0.2",
+    "typescript": "catalog:",
     "vite": "^8.0.4",
     "vite-plugin-compression": "^0.5.1",
     "vite-plugin-image-optimizer": "^2.0.3",
     "yapi-to-typescript": "^3.38.0"
-  },
-  "engines": {
-    "node": ">=20.0.0"
   }
 }

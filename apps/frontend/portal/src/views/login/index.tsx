@@ -12,6 +12,7 @@ import './index.scss';
 export default function LoginPage() {
   const navigate = useNavigate();
   const setToken = useUserStore((state) => state.setToken);
+  const setRefreshToken = useUserStore((state) => state.setRefreshToken);
   const setUserInfo = useUserStore((state) => state.setUserInfo);
   const [mode, setMode] = useState<LoginMode>(LoginMode.LOGIN);
   const [loading, setLoading] = useState(false);
@@ -49,6 +50,7 @@ export default function LoginPage() {
                     });
               if (res.code === ApiResponseCode.SUCCESS) {
                 setToken(res.data.accessToken);
+                setRefreshToken(res.data.refreshToken);
                 setUserInfo(res.data.userInfo);
                 message.success(res.message || '登录成功');
                 navigate('/chat', { replace: true });

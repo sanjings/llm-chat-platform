@@ -39,6 +39,6 @@ Use this as the router skill for any end-to-end chat streaming change.
 
 ## Validation
 
-- `pnpm -C frontend exec tsc --noEmit`
-- `pnpm -C backend run tsc`
+- `pnpm --filter @llm-chat-platform/portal exec tsc --noEmit`
+- `pnpm --filter @llm-chat-platform/backend run tsc`
 - Manual: stream in A, switch to B, stop B, return to A; verify no cross-session pollution.

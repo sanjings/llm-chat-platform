@@ -7,10 +7,10 @@ description: Implement and debug backend SSE chat streaming behavior in this rep
 
 ## Scope
 
-- `backend/src/modules/chat/controllers/chat.controller.ts`
-- `backend/src/modules/chat/services/chat.services.ts`
-- `backend/src/modules/chat/dtos/chat.dto.ts`
-- `backend/src/modules/session/services/session.service.ts`
+- `apps/backend/src/modules/chat/controllers/chat.controller.ts`
+- `apps/backend/src/modules/chat/services/chat.services.ts`
+- `apps/backend/src/modules/chat/dtos/chat.dto.ts`
+- `apps/backend/src/modules/session/services/session.service.ts`
 - session/message persistence paths used by chat flow
 
 ## Project Conventions
@@ -67,5 +67,5 @@ description: Implement and debug backend SSE chat streaming behavior in this rep
 
 ## Verification
 
-- `pnpm -C backend run tsc`
+- `pnpm --filter @llm-chat-platform/backend run tsc`
 - Optional targeted check: `/chat/stream` manual call with both providers if environment supports it.

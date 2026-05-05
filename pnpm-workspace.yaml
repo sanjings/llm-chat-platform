@@ -1,0 +1,9 @@
+packages:
+  - 'packages/*'
+  - 'apps/*'
+  - 'apps/frontend/*'
+
+catalog:
+  typescript: ^6.0.3
+  '@types/node': ^24.12.2
+  globals: ^17.4.0

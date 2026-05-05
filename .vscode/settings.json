@@ -24,7 +24,7 @@
   "eslint.useFlatConfig": true,
   "stylelint.enable": true,
   "stylelint.validate": ["css", "less", "postcss", "scss", "vue", "sass"],
-  "stylelint.configFile": "./frontend/.stylelintrc.js",
+  "stylelint.configFile": "./apps/frontend/portal/.stylelintrc.js",
   // 禁用编辑器默认格式化，统一用Prettier
   "[javascript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
   "[typescript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },

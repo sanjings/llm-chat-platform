@@ -130,9 +130,21 @@ export interface RequestAuthRegisterLoginRequest {
  */
 export interface RequestAuthRegisterLoginResponse {
   /**
-   * JWT 访问令牌
+   * JWT 访问令牌（短有效期）
    */
   accessToken: string
+  /**
+   * JWT 刷新令牌（用于换发 accessToken）
+   */
+  refreshToken: string
+  /**
+   * accessToken 过期时间（秒）
+   */
+  accessTokenExpiresIn: number
+  /**
+   * refreshToken 过期时间（秒）
+   */
+  refreshTokenExpiresIn: number
   userInfo: {
     id: string
     phone: string
@@ -214,9 +226,21 @@ export interface RequestAuthLoginRequest {
  */
 export interface RequestAuthLoginResponse {
   /**
-   * JWT 访问令牌
+   * JWT 访问令牌（短有效期）
    */
   accessToken: string
+  /**
+   * JWT 刷新令牌（用于换发 accessToken）
+   */
+  refreshToken: string
+  /**
+   * accessToken 过期时间（秒）
+   */
+  accessTokenExpiresIn: number
+  /**
+   * refreshToken 过期时间（秒）
+   */
+  refreshTokenExpiresIn: number
   userInfo: {
     id: string
     phone: string
@@ -275,5 +299,237 @@ export const requestAuthLogin = /*#__PURE__*/ (requestData: RequestAuthLoginRequ
 }
 
 requestAuthLogin.requestConfig = requestAuthLoginRequestConfig
+
+/**
+ * 接口 刷新令牌并换发 accessToken 的 **请求类型**
+ *
+ * @分类 auth
+ * @请求头 `POST /api/auth/refresh`
+ */
+export interface RequestAuthRefreshRequest {
+  /**
+   * 刷新令牌
+   */
+  refreshToken: string
+}
+
+/**
+ * 接口 刷新令牌并换发 accessToken 的 **返回类型**
+ *
+ * @分类 auth
+ * @请求头 `POST /api/auth/refresh`
+ */
+export interface RequestAuthRefreshResponse {
+  /**
+   * JWT 访问令牌（短有效期）
+   */
+  accessToken: string
+  /**
+   * JWT 刷新令牌（用于换发 accessToken）
+   */
+  refreshToken: string
+  /**
+   * accessToken 过期时间（秒）
+   */
+  accessTokenExpiresIn: number
+  /**
+   * refreshToken 过期时间（秒）
+   */
+  refreshTokenExpiresIn: number
+  userInfo: {
+    id: string
+    phone: string
+    nickname: string
+    /**
+     * 头像地址或 base64 字符串
+     */
+    avatar?: string
+  }
+}
+
+/**
+ * 接口 刷新令牌并换发 accessToken 的 **请求配置的类型**
+ *
+ * @分类 auth
+ * @请求头 `POST /api/auth/refresh`
+ */
+type RequestAuthRefreshRequestConfig = Readonly<
+  RequestConfig<'http://127.0.0.1:50505/mock/0', '', '', '/api/auth/refresh', undefined, string, string, false>
+>
+
+/**
+ * 接口 刷新令牌并换发 accessToken 的 **请求配置**
+ *
+ * @分类 auth
+ * @请求头 `POST /api/auth/refresh`
+ */
+const requestAuthRefreshRequestConfig: RequestAuthRefreshRequestConfig = /*#__PURE__*/ {
+  mockUrl: mockUrl_0_0_0_0,
+  devUrl: devUrl_0_0_0_0,
+  prodUrl: prodUrl_0_0_0_0,
+  path: '/api/auth/refresh',
+  method: Method.POST,
+  requestHeaders: {},
+  requestBodyType: RequestBodyType.json,
+  responseBodyType: ResponseBodyType.json,
+  dataKey: dataKey_0_0_0_0,
+  paramNames: [],
+  queryNames: [],
+  requestDataOptional: false,
+  requestDataJsonSchema: {},
+  responseDataJsonSchema: {},
+  requestFunctionName: 'requestAuthRefresh',
+  queryStringArrayFormat: QueryStringArrayFormat.brackets,
+  extraInfo: {},
+}
+
+/**
+ * 接口 刷新令牌并换发 accessToken 的 **请求函数**
+ *
+ * @分类 auth
+ * @请求头 `POST /api/auth/refresh`
+ */
+export const requestAuthRefresh = /*#__PURE__*/ (
+  requestData: RequestAuthRefreshRequest,
+  ...args: UserRequestRestArgs
+) => {
+  return request<RequestAuthRefreshResponse>(prepare(requestAuthRefreshRequestConfig, requestData), ...args)
+}
+
+requestAuthRefresh.requestConfig = requestAuthRefreshRequestConfig
+
+/**
+ * 接口 退出当前设备 的 **请求类型**
+ *
+ * @分类 auth
+ * @请求头 `POST /api/auth/logout`
+ */
+export interface RequestAuthLogoutRequest {}
+
+/**
+ * 接口 退出当前设备 的 **返回类型**
+ *
+ * @分类 auth
+ * @请求头 `POST /api/auth/logout`
+ */
+export interface RequestAuthLogoutResponse {}
+
+/**
+ * 接口 退出当前设备 的 **请求配置的类型**
+ *
+ * @分类 auth
+ * @请求头 `POST /api/auth/logout`
+ */
+type RequestAuthLogoutRequestConfig = Readonly<
+  RequestConfig<'http://127.0.0.1:50505/mock/0', '', '', '/api/auth/logout', undefined, string, string, true>
+>
+
+/**
+ * 接口 退出当前设备 的 **请求配置**
+ *
+ * @分类 auth
+ * @请求头 `POST /api/auth/logout`
+ */
+const requestAuthLogoutRequestConfig: RequestAuthLogoutRequestConfig = /*#__PURE__*/ {
+  mockUrl: mockUrl_0_0_0_0,
+  devUrl: devUrl_0_0_0_0,
+  prodUrl: prodUrl_0_0_0_0,
+  path: '/api/auth/logout',
+  method: Method.POST,
+  requestHeaders: {},
+  requestBodyType: RequestBodyType.raw,
+  responseBodyType: ResponseBodyType.json,
+  dataKey: dataKey_0_0_0_0,
+  paramNames: [],
+  queryNames: [],
+  requestDataOptional: true,
+  requestDataJsonSchema: {},
+  responseDataJsonSchema: {},
+  requestFunctionName: 'requestAuthLogout',
+  queryStringArrayFormat: QueryStringArrayFormat.brackets,
+  extraInfo: {},
+}
+
+/**
+ * 接口 退出当前设备 的 **请求函数**
+ *
+ * @分类 auth
+ * @请求头 `POST /api/auth/logout`
+ */
+export const requestAuthLogout = /*#__PURE__*/ (
+  requestData?: RequestAuthLogoutRequest,
+  ...args: UserRequestRestArgs
+) => {
+  return request<RequestAuthLogoutResponse>(prepare(requestAuthLogoutRequestConfig, requestData), ...args)
+}
+
+requestAuthLogout.requestConfig = requestAuthLogoutRequestConfig
+
+/**
+ * 接口 退出全部设备 的 **请求类型**
+ *
+ * @分类 auth
+ * @请求头 `POST /api/auth/logoutAll`
+ */
+export interface RequestAuthLogoutAllRequest {}
+
+/**
+ * 接口 退出全部设备 的 **返回类型**
+ *
+ * @分类 auth
+ * @请求头 `POST /api/auth/logoutAll`
+ */
+export interface RequestAuthLogoutAllResponse {}
+
+/**
+ * 接口 退出全部设备 的 **请求配置的类型**
+ *
+ * @分类 auth
+ * @请求头 `POST /api/auth/logoutAll`
+ */
+type RequestAuthLogoutAllRequestConfig = Readonly<
+  RequestConfig<'http://127.0.0.1:50505/mock/0', '', '', '/api/auth/logoutAll', undefined, string, string, true>
+>
+
+/**
+ * 接口 退出全部设备 的 **请求配置**
+ *
+ * @分类 auth
+ * @请求头 `POST /api/auth/logoutAll`
+ */
+const requestAuthLogoutAllRequestConfig: RequestAuthLogoutAllRequestConfig = /*#__PURE__*/ {
+  mockUrl: mockUrl_0_0_0_0,
+  devUrl: devUrl_0_0_0_0,
+  prodUrl: prodUrl_0_0_0_0,
+  path: '/api/auth/logoutAll',
+  method: Method.POST,
+  requestHeaders: {},
+  requestBodyType: RequestBodyType.raw,
+  responseBodyType: ResponseBodyType.json,
+  dataKey: dataKey_0_0_0_0,
+  paramNames: [],
+  queryNames: [],
+  requestDataOptional: true,
+  requestDataJsonSchema: {},
+  responseDataJsonSchema: {},
+  requestFunctionName: 'requestAuthLogoutAll',
+  queryStringArrayFormat: QueryStringArrayFormat.brackets,
+  extraInfo: {},
+}
+
+/**
+ * 接口 退出全部设备 的 **请求函数**
+ *
+ * @分类 auth
+ * @请求头 `POST /api/auth/logoutAll`
+ */
+export const requestAuthLogoutAll = /*#__PURE__*/ (
+  requestData?: RequestAuthLogoutAllRequest,
+  ...args: UserRequestRestArgs
+) => {
+  return request<RequestAuthLogoutAllResponse>(prepare(requestAuthLogoutAllRequestConfig, requestData), ...args)
+}
+
+requestAuthLogoutAll.requestConfig = requestAuthLogoutAllRequestConfig
 
 /* prettier-ignore-end */
