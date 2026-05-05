@@ -2,7 +2,7 @@ import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nes
 import { Request } from 'express';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { LoggerService } from '../logger/logger.service';
+import { LoggerService } from 'src/infrastructure/logger/logger.service';
 import { safeJson, sanitizeForLog } from '../utils/request-log-sanitize';
 
 @Injectable()

@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { RegisterDto } from 'src/modules/auth/dtos/auth.dto';
-import { PrismaService } from 'src/database/prisma.service';
+import { PrismaService } from 'src/infrastructure/database/prisma.service';
 import { resolveOffsetPagination } from 'src/common/pagination/offset-pagination.util';
 
 const PUBLIC_USER_SELECT = {
@@ -55,11 +55,9 @@ export class UserService {
     const exist = await this.findByPhoneOptional(user.phone);
     if (exist) throw new BadRequestException('用户已存在');
 
-    const { avatar: _ignoredAvatar, ...rest } = user;
-
     return this.prisma.user.create({
       data: {
-        ...rest,
+        ...user,
         nickname: user.nickname || `用户_${user.phone.slice(-4)}`
       }
     });

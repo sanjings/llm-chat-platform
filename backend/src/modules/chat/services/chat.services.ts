@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { SessionService } from 'src/modules/session/services/session.service';
-import { PrismaService } from 'src/database/prisma.service';
+import { PrismaService } from 'src/infrastructure/database/prisma.service';
 import { lowerCaseToRole, roleToLowerCase } from 'src/utils/role.utils';
 import type { ResponseFormatWire } from '../dtos/chat.dto';
 

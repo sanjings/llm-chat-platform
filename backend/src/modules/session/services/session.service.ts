@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/database/prisma.service';
+import { PrismaService } from 'src/infrastructure/database/prisma.service';
 import { roleToLowerCase } from 'src/utils/role.utils';
 import { resolveOffsetPagination } from 'src/common/pagination/offset-pagination.util';
 import {

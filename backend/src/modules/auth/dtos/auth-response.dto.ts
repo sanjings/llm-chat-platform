@@ -15,8 +15,17 @@ export class AuthUserInfoDto {
 }
 
 export class AuthTokenResponseDto {
-  @ApiProperty({ description: 'JWT 访问令牌' })
+  @ApiProperty({ description: 'JWT 访问令牌（短有效期）' })
   accessToken: string;
+
+  @ApiProperty({ description: 'JWT 刷新令牌（用于换发 accessToken）' })
+  refreshToken: string;
+
+  @ApiProperty({ description: 'accessToken 过期时间（秒）', example: 900 })
+  accessTokenExpiresIn: number;
+
+  @ApiProperty({ description: 'refreshToken 过期时间（秒）', example: 604800 })
+  refreshTokenExpiresIn: number;
 
   @ApiProperty({ type: AuthUserInfoDto })
   userInfo: AuthUserInfoDto;

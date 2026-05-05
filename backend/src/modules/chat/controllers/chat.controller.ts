@@ -5,6 +5,7 @@ import { type Response } from 'express';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { JwtPayload } from 'src/modules/auth/interfaces/jwt-payload.interface';
 import { ApiBody, ApiOkResponse, ApiOperation, ApiProduces, ApiTags } from '@nestjs/swagger';
+import { StandardResponse } from 'src/common/response/standard.response';
 
 /** 边收大模型字节、边拼出「完整助手回复」，方便流结束后写入数据库（和供应商返回的 JSON 格式有关） */
 function accumulateAssistantFromSseChunk(
@@ -76,7 +77,7 @@ export class ChatController {
 
     stream.on('error', () => {
       if (!res.headersSent) {
-        res.status(500).json({ error: 'AI服务异常' });
+        res.json(StandardResponse.fail('AI服务异常'));
       } else if (!res.writableEnded) {
         res.end();
       }

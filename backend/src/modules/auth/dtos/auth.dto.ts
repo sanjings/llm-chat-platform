@@ -42,3 +42,10 @@ export class LoginDto {
   @MaxLength(32)
   password: string;
 }
+
+export class RefreshTokenDto {
+  @ApiProperty({ description: '刷新令牌' })
+  @IsNotEmpty({ message: 'refreshToken 不能为空' })
+  @IsString()
+  refreshToken: string;
+}

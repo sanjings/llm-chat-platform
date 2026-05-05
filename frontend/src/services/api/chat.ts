@@ -5,7 +5,7 @@ import { safeParse } from '@/utils';
 import type { ModelType, ResponseFormatType } from '@/constants/chat';
 
 /**
- * 流式对话。modelId 预留给下一版多模型，不传则走后端环境变量默认模型。
+ * 流式对话
  */
 export async function requestChat(
   messages: Message[],

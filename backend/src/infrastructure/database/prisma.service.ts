@@ -1,7 +1,7 @@
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { PrismaClient } from '../generated/prisma/client';
-import { LoggerService } from 'src/common/logger/logger.service';
+import { PrismaClient } from '../../generated/prisma/client';
+import { LoggerService } from '../logger/logger.service';
 import { databaseUrlToMariadbPoolConfig } from './mariadb-pool-config';
 
 @Injectable()

@@ -1,6 +1,6 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { LoggerService } from '../logger/logger.service';
+import { LoggerService } from 'src/infrastructure/logger/logger.service';
 import { StandardResponse } from '../response/standard.response';
 
 @Catch()
