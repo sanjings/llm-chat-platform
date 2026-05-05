@@ -1,30 +1,44 @@
 ---
 name: chat-session-streaming
-description: Coordinate full-stack multi-session streaming chat changes in this project. Use when tasks span both frontend session rendering/state and backend /chat/stream SSE or message persistence logic.
+description: Coordinate cross-layer streaming chat work in this repository. Use when tasks span frontend session state/rendering and backend /chat/stream SSE, model routing, or message persistence.
 ---
 
 # Chat Session Streaming
 
-## Use This As Router Skill
+## Purpose
 
-Use this skill when the request is cross-layer. Then immediately load one or both specialized skills:
+Use this as the router skill for any end-to-end chat streaming change.
 
-- Frontend: [chat-session-streaming-frontend](../chat-session-streaming-frontend/SKILL.md)
-- Backend: [chat-session-streaming-backend](../chat-session-streaming-backend/SKILL.md)
+## Load Order
+
+1. Always load [project-js-fullstack-conventions](../project-js-fullstack-conventions/SKILL.md) first.
+2. Then load one or both specialized skills:
+   - Frontend: [chat-session-streaming-frontend](../chat-session-streaming-frontend/SKILL.md)
+   - Backend: [chat-session-streaming-backend](../chat-session-streaming-backend/SKILL.md)
 
 ## Routing Rules
 
-1. If task is only UI/state/rendering, use frontend skill only.
-2. If task is only `/chat/stream` SSE, provider mapping, or DB persistence, use backend skill only.
-3. If task affects request contract and UI behavior together, use both skills.
+1. UI/session store/rendering only -> frontend skill.
+2. `/chat/stream`, provider SSE, DTO, model binding, persistence only -> backend skill.
+3. Request/response contract or behavior across both layers -> both skills.
 
-## Shared Invariants
+## Non-Negotiable Invariants
 
-- Session isolation is mandatory; no cross-session stream pollution.
-- Last outbound message for stream call must be a user prompt.
-- Switching sessions must not implicitly kill other in-flight sessions unless explicitly requested.
+- Session isolation: stream updates must be scoped by session key plus request identity.
+- Request payload contract: outbound `messages` cannot end with assistant placeholder; tail must be user prompt.
+- New-session flow: backend returns `session-id` header; frontend migrates draft state to real session.
+- Stop behavior: stopping current panel cannot implicitly kill another session's stream.
+- Persistence semantics: one user message before stream call, one assistant message at stream end when content is non-empty.
 
-## Minimal Validation
+## Cross-Layer Checklist
 
-- `pnpm -C frontend exec tsc --noEmit`
-- Manual: stream in session A, switch to B, ensure no pollution; switch back and confirm continuation.
+- DTO and frontend request body stay aligned (`messages`, `sessionId`, `modelId`, `responseFormat`).
+- SSE parser compatibility remains valid for both OpenAI-compatible delta and DashScope full-text styles.
+- Error path closes stream cleanly and does not double-write responses.
+- Model binding rule remains consistent: bound session model cannot be switched silently.
+
+## Validation
+
+- `pnpm --filter @llm-chat-platform/portal exec tsc --noEmit`
+- `pnpm --filter @llm-chat-platform/backend run tsc`
+- Manual: stream in A, switch to B, stop B, return to A; verify no cross-session pollution.
