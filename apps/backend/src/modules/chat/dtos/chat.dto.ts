@@ -35,7 +35,7 @@ export class ChatDto {
    * 多模型：传模型名或线路标识；命中后端映射则决定走 DashScope 还是 OpenAI 兼容网关。
    * 已有 sessionId 且会话已绑定 llmModelId 时以库为准；若再传且与绑定不一致则 400。
    */
-  @ApiPropertyOptional({ example: 'qwen-max' })
+  @ApiPropertyOptional({ example: 'qwen3.7-plus' })
   @IsOptional()
   @IsString()
   modelId?: string;
@@ -44,4 +44,23 @@ export class ChatDto {
   @IsOptional()
   @IsIn(RESPONSE_FORMAT_WIRE, { message: 'responseFormat 须为 text / markdown' })
   responseFormat?: ResponseFormatWire;
+}
+
+export class ChatModelOptionDto {
+  @ApiProperty({ example: 'qwen3.7-plus', description: '上游官方模型 ID' })
+  id: string;
+
+  @ApiProperty({ enum: ['dashscope', 'openai_compatible'] })
+  provider: 'dashscope' | 'openai_compatible';
+
+  @ApiProperty({ description: '对应厂商 API Key 已配置时为 true' })
+  available: boolean;
+
+  @ApiPropertyOptional({ nullable: true, example: '未配置 DeepSeek API Key，DeepSeek 模型不可选' })
+  unavailableReason: string | null;
+}
+
+export class ChatModelListDto {
+  @ApiProperty({ type: [ChatModelOptionDto] })
+  models: ChatModelOptionDto[];
 }

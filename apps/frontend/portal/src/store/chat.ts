@@ -1,3 +1,4 @@
+import { message } from 'antd';
 import { create } from 'zustand';
 import { requestChat } from '@/services/api/chat';
 import {
@@ -5,7 +6,7 @@ import {
   type RequestSessionMessagesSessionIdResponse
 } from '@/services/swagger/session';
 import { ApiResponseCode } from '@/services/request';
-import { ModelType, ResponseFormatType } from '@/constants/chat';
+import { ResponseFormatType } from '@/constants/chat';
 
 export type Message = PartialKey<
   GetArrayItem<RequestSessionMessagesSessionIdResponse['list']>,
@@ -42,7 +43,7 @@ type ChatState = {
   sendMessage: (
     sessionId: string | null,
     text: string,
-    modelId?: ModelType,
+    modelId?: string,
     responseFormat?: ResponseFormatType,
     options?: SendMessageOptions
   ) => Promise<void>;
@@ -301,6 +302,10 @@ export const useChatStore = create<ChatState>()((set, get) => ({
       }
       flushDelta();
       const aborted = error instanceof DOMException && error.name === 'AbortError';
+      if (!aborted) {
+        const reason = error instanceof Error ? error.message : '请求失败';
+        message.error(reason || '请求失败');
+      }
       set((state) => ({
         streamBySession: {
           ...state.streamBySession,
