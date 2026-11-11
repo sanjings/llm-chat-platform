@@ -1,6 +1,6 @@
-import { Controller, Post, Body, Res, Logger } from '@nestjs/common';
+import { Controller, Get, Post, Body, Res, Logger } from '@nestjs/common';
 import { ChatService } from '../services/chat.services';
-import { ChatDto } from '../dtos/chat.dto';
+import { ChatDto, ChatModelListDto } from '../dtos/chat.dto';
 import { type Response } from 'express';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { JwtPayload } from 'src/modules/auth/interfaces/jwt-payload.interface';
@@ -49,6 +49,14 @@ export class ChatController {
   private readonly logger = new Logger(ChatController.name);
 
   constructor(private readonly chatService: ChatService) {}
+
+  @Get('models')
+  @ApiOperation({ summary: '可选模型及密钥是否已配置' })
+  @ApiOkResponse({ type: ChatModelListDto })
+  @ApiProduces('application/json')
+  listModels() {
+    return { models: this.chatService.listSelectableModels() };
+  }
 
   @Post('stream')
   @ApiOperation({ summary: '流式聊天' })

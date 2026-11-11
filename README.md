@@ -12,7 +12,7 @@
 
 - 前端（用户端 portal）：React 19、TypeScript、Vite、Ant Design、Zustand
 - 后端：NestJS、Prisma（MySQL）、Redis（ioredis，会话与 JWT 校验等）、Swagger、JWT 登录
-- 对话：SSE 流式转发；支持通义 DashScope 或 OpenAI 兼容接口（如 DeepSeek），见 `apps/backend/.env.example` 中 `LLM_PROVIDER`
+- 对话：SSE 流式转发；支持通义 DashScope 与 DeepSeek（OpenAI 兼容接口）。两家都配了密钥时，新会话可按模型切换线路，见 `apps/backend/.env.example`
 
 ### 🔑 核心功能
 
@@ -56,7 +56,7 @@ pnpm --filter @llm-chat-platform/backend run migrate:dev
 
 #### 2. 后端
 
-在 `apps/backend/.env` 中至少配置：`DATABASE_URL`、`REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD`（与本地 Redis 一致）、`JWT_SECRET`、`LLM_PROVIDER` 与对应 `LLM_API_KEY`（或 DashScope 场景下的兼容变量，见示例文件注释）。
+在 `apps/backend/.env` 中至少配置：`DATABASE_URL`、`REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD`（与本地 Redis 一致）、`JWT_SECRET`，以及要用的模型密钥。通义用 `DASHSCOPE_API_KEY`，DeepSeek 用 `DEEPSEEK_API_KEY`。只配一家时，另一家模型会在界面写明不可选原因。`LLM_PROVIDER` 与 `LLM_API_KEY` 仍可作为默认线路的兼容配置，见示例文件注释。
 
 ```bash
 pnpm backend:dev

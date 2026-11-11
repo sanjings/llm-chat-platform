@@ -17,7 +17,7 @@ model Session {
   userId      String
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages    Message[]
-  /** 本会话绑定的前端模型标识（如 qwen-max）；首条对话写入后不可切换 */
+  /** 本会话绑定的前端模型标识（如 qwen3.7-plus）；首条对话写入后不可切换 */
   llmModelId  String?
   createTime  DateTime  @default(now())
   updateTime  DateTime  @updatedAt

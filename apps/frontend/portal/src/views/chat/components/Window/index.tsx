@@ -7,7 +7,7 @@ import { type RequestSessionListResponse } from '@/services/swagger/session';
 import Model from './Model';
 import { DRAFT_SESSION_KEY, useChatStore } from '@/store/chat';
 import './index.scss';
-import { ModelType, ResponseFormatType } from '@/constants/chat';
+import { DEFAULT_MODEL_ID, ResponseFormatType } from '@/constants/chat';
 
 const EMPTY_MESSAGES: Message[] = [];
 
@@ -18,7 +18,7 @@ interface ChatViewProps {
 }
 
 export default function ChatWindow({ curSession, onSessionCreated, onSessionUpdated }: ChatViewProps) {
-  const [curModel, setCurModel] = useState<ModelType>(ModelType.QWEN_MAX);
+  const [curModel, setCurModel] = useState<string>(DEFAULT_MODEL_ID);
   const sessionId = curSession?.id ?? null;
   const sessionKey = sessionId ?? DRAFT_SESSION_KEY;
   const chatBoxRef = useRef<ChatBoxRef>(null);
@@ -42,7 +42,7 @@ export default function ChatWindow({ curSession, onSessionCreated, onSessionUpda
   }, [sessionId, setActiveSessionId, loadSessionMessages]);
 
   const handleSend = async (text: string) => {
-    const modelForRequest = (curSession?.llmModelId?.trim() || curModel) as ModelType;
+    const modelForRequest = curSession?.llmModelId?.trim() || curModel;
     const sendTask = sendMessage(sessionId, text, modelForRequest, ResponseFormatType.MARKDOWN, {
       onSessionCreated,
       onSessionUpdated

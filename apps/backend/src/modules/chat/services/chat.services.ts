@@ -9,6 +9,63 @@ import type { ResponseFormatWire } from '../dtos/chat.dto';
 /** 和前端约定一致的消息结构 */
 export type ChatStreamMessage = { role: string; content: string };
 type ResponseFormat = ResponseFormatWire | undefined;
+export type LlmProviderName = 'dashscope' | 'openai_compatible';
+
+export type SelectableChatModel = {
+  id: string;
+  provider: LlmProviderName;
+  available: boolean;
+  unavailableReason: string | null;
+};
+
+type ResolvedLlm = { provider: LlmProviderName; model: string };
+
+/**
+ * 新会话可选模型。id 与上游官方模型名一致。
+ * 通义取百炼当前推荐的文本模型（不含仅 Token Plan 的预览版）；
+ * DeepSeek 取 2026-07-24 停用 deepseek-chat / deepseek-reasoner 之后的现用名。
+ */
+const SELECTABLE_MODELS: Array<{ id: string; provider: LlmProviderName; model: string }> = [
+  { id: 'qwen3.8-max', provider: 'dashscope', model: 'qwen3.8-max' },
+  { id: 'qwen3.7-plus', provider: 'dashscope', model: 'qwen3.7-plus' },
+  { id: 'qwen3.8-flash', provider: 'dashscope', model: 'qwen3.8-flash' },
+  { id: 'deepseek-flash', provider: 'openai_compatible', model: 'deepseek-flash' },
+  { id: 'deepseek-v4-pro', provider: 'openai_compatible', model: 'deepseek-v4-pro' }
+];
+
+/** 旧会话或线路别名仍能路由；不出现在可选列表里 */
+const LEGACY_MODEL_MAP: Record<string, ResolvedLlm> = {
+  dashscope: { provider: 'dashscope', model: 'qwen3.7-plus' },
+  openai_compatible: { provider: 'openai_compatible', model: 'deepseek-flash' },
+  openai: { provider: 'openai_compatible', model: 'deepseek-flash' },
+  deepseek: { provider: 'openai_compatible', model: 'deepseek-flash' },
+  'qwen-max': { provider: 'dashscope', model: 'qwen-max' },
+  'qwen-plus': { provider: 'dashscope', model: 'qwen-plus' },
+  'qwen-turbo': { provider: 'dashscope', model: 'qwen-turbo' },
+  'qwen2.5-72b-instruct': { provider: 'dashscope', model: 'qwen2.5-72b-instruct' },
+  'qwen2.5-32b-instruct': { provider: 'dashscope', model: 'qwen2.5-32b-instruct' },
+  'deepseek-chat': { provider: 'openai_compatible', model: 'deepseek-flash' },
+  'deepseek-reasoner': { provider: 'openai_compatible', model: 'deepseek-flash' }
+};
+
+const DEFAULT_DASHSCOPE_MODEL = 'qwen3.7-plus';
+const DEFAULT_DEEPSEEK_MODEL = 'deepseek-flash';
+
+const missingKeyReason = (provider: LlmProviderName) =>
+  provider === 'dashscope'
+    ? '未配置通义 DashScope API Key，通义模型不可选'
+    : '未配置 DeepSeek API Key，DeepSeek 模型不可选';
+
+export const resolveFrontendModel = (modelId: string | undefined, fallback: ResolvedLlm): ResolvedLlm => {
+  const raw = modelId?.trim();
+  if (!raw) return fallback;
+  const key = raw.toLowerCase();
+  const selectable = SELECTABLE_MODELS.find((item) => item.id === key);
+  if (selectable) return { provider: selectable.provider, model: selectable.model };
+  const legacy = LEGACY_MODEL_MAP[key];
+  if (legacy) return legacy;
+  return { provider: fallback.provider, model: raw };
+};
 
 /**
  * 聊天业务：写库 + 调大模型。
@@ -27,8 +84,8 @@ export class ChatService {
     private readonly http: HttpService
   ) {}
 
-  /** 用环境变量决定走哪家 API（未传 modelId 或 modelId 未命中映射时） */
-  private llmProvider(): 'dashscope' | 'openai_compatible' {
+  /** 用环境变量决定默认线路（未传 modelId，或 modelId 未命中映射时） */
+  private llmProvider(): LlmProviderName {
     const p = (process.env.LLM_PROVIDER || 'dashscope').toLowerCase();
     if (p === 'openai_compatible' || p === 'openai' || p === 'deepseek') {
       return 'openai_compatible';
@@ -36,52 +93,51 @@ export class ChatService {
     return 'dashscope';
   }
 
-  /**
-   * 前端 modelId → 实际 provider + 上游 model。
-   * 未命中映射时：provider 仍看 LLM_PROVIDER，model 使用传入字符串（便于扩展新模型名）。
-   */
-  private readonly frontendModelMap: Record<string, { provider: 'dashscope' | 'openai_compatible'; model: string }> = {
-    dashscope: { provider: 'dashscope', model: 'qwen-max' },
-    openai_compatible: { provider: 'openai_compatible', model: 'deepseek-chat' },
-    openai: { provider: 'openai_compatible', model: 'deepseek-chat' },
-    deepseek: { provider: 'openai_compatible', model: 'deepseek-chat' },
-    'qwen-max': { provider: 'dashscope', model: 'qwen-max' },
-    'qwen-plus': { provider: 'dashscope', model: 'qwen-plus' },
-    'qwen-turbo': { provider: 'dashscope', model: 'qwen-turbo' },
-    'qwen2.5-72b-instruct': { provider: 'dashscope', model: 'qwen2.5-72b-instruct' },
-    'qwen2.5-32b-instruct': { provider: 'dashscope', model: 'qwen2.5-32b-instruct' },
-    'deepseek-chat': { provider: 'openai_compatible', model: 'deepseek-chat' },
-    'deepseek-reasoner': { provider: 'openai_compatible', model: 'deepseek-reasoner' }
-  };
-
   private resolveModel(explicit?: string): string {
     if (explicit?.trim()) return explicit.trim();
-    if (process.env.LLM_MODEL) return process.env.LLM_MODEL;
-    return this.llmProvider() === 'dashscope' ? 'qwen-max' : 'deepseek-chat';
+    if (process.env.LLM_MODEL?.trim()) return process.env.LLM_MODEL.trim();
+    return this.llmProvider() === 'dashscope' ? DEFAULT_DASHSCOPE_MODEL : DEFAULT_DEEPSEEK_MODEL;
   }
 
   /** 一次请求内用哪个网关、哪个模型名 */
-  private resolveLlmFromRequest(modelId?: string): {
-    provider: 'dashscope' | 'openai_compatible';
-    model: string;
-  } {
-    const raw = modelId?.trim();
-    if (!raw) {
-      return { provider: this.llmProvider(), model: this.resolveModel() };
-    }
-    const mapped = this.frontendModelMap[raw.toLowerCase()];
-    if (mapped) {
-      return { provider: mapped.provider, model: mapped.model };
-    }
-    return { provider: this.llmProvider(), model: raw };
+  private resolveLlmFromRequest(modelId?: string): ResolvedLlm {
+    return resolveFrontendModel(modelId, { provider: this.llmProvider(), model: this.resolveModel() });
   }
 
-  private resolveApiKeyFor(provider: 'dashscope' | 'openai_compatible'): string {
-    if (process.env.LLM_API_KEY) return process.env.LLM_API_KEY;
-    if (provider === 'dashscope' && process.env.DASHSCOPE_API_KEY) {
-      return process.env.DASHSCOPE_API_KEY;
+  /**
+   * 各家密钥分开读。
+   * 专有变量优先；LLM_API_KEY 只作为 LLM_PROVIDER 对应线路的兼容密钥，避免一把钥匙打到另一家。
+   */
+  private apiKeyFor(provider: LlmProviderName): string {
+    if (provider === 'dashscope') {
+      const dedicated = process.env.DASHSCOPE_API_KEY?.trim();
+      if (dedicated) return dedicated;
+      if (this.llmProvider() === 'dashscope') return process.env.LLM_API_KEY?.trim() || '';
+      return '';
     }
-    throw new Error('请配置 LLM_API_KEY（用通义时可继续用 DASHSCOPE_API_KEY）');
+    const dedicated = process.env.DEEPSEEK_API_KEY?.trim();
+    if (dedicated) return dedicated;
+    if (this.llmProvider() === 'openai_compatible') return process.env.LLM_API_KEY?.trim() || '';
+    return '';
+  }
+
+  private resolveApiKeyFor(provider: LlmProviderName): string {
+    const key = this.apiKeyFor(provider);
+    if (!key) throw new BadRequestException(missingKeyReason(provider));
+    return key;
+  }
+
+  /** 给新会话选择器用：只暴露当前模型，并写明缺哪家密钥 */
+  listSelectableModels(): SelectableChatModel[] {
+    return SELECTABLE_MODELS.map((item) => {
+      const available = Boolean(this.apiKeyFor(item.provider));
+      return {
+        id: item.id,
+        provider: item.provider,
+        available,
+        unavailableReason: available ? null : missingKeyReason(item.provider)
+      };
+    });
   }
 
   /**
@@ -142,8 +198,9 @@ export class ChatService {
   }
 
   /**
-   * 1. 先把用户这条话写入数据库
-   * 2. 向大模型发起流式请求，把 Node 可读流交给 Controller 去 pipe 给浏览器
+   * 1. 解析会话绑定与模型线路，缺密钥时直接拒绝，避免先写入会话
+   * 2. 把用户这条话写入数据库
+   * 3. 向大模型发起流式请求，把 Node 可读流交给 Controller 去 pipe 给浏览器
    */
   async chatStream(
     userId: string,
@@ -173,65 +230,57 @@ export class ChatService {
 
     const effectiveModelInput = boundModelId || reqModel || undefined;
     const { provider, model } = this.resolveLlmFromRequest(effectiveModelInput);
+    const key = this.resolveApiKeyFor(provider);
     const persistModelId = boundModelId ? undefined : reqModel || model;
 
     const msg = await this.sendMsg(userId, 'user', userContent, effectiveSessionId, {
       llmModelId: persistModelId
     });
     const realSessionId = msg.sessionId;
-    const key = this.resolveApiKeyFor(provider);
+    const stream = await this.openProviderStream(provider, model, normalizedMessages, key);
+    return { stream, sessionId: realSessionId, provider };
+  }
 
+  /**
+   * 通义当前模型走 DashScope 的 OpenAI 兼容接口（北京旧域名仍可用），
+   * 返回的 SSE 与 DeepSeek 一样是 delta.content，前端解析器已兼容。
+   * 对话界面只渲染 content，因此关闭思考模式，避免推理片段占满输出且界面空白。
+   */
+  private async openProviderStream(
+    provider: LlmProviderName,
+    model: string,
+    messages: ChatStreamMessage[],
+    key: string
+  ) {
+    const openaiMessages = messages.map((item) => ({ role: item.role, content: item.content }));
+    const base =
+      provider === 'dashscope'
+        ? (process.env.DASHSCOPE_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1').replace(/\/$/, '')
+        : (process.env.LLM_BASE_URL || 'https://api.deepseek.com/v1').replace(/\/$/, '');
+    const body: Record<string, unknown> = {
+      model,
+      messages: openaiMessages,
+      stream: true
+    };
     if (provider === 'dashscope') {
-      const res = await firstValueFrom(
-        this.http.post(
-          'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation',
-          {
-            model,
-            input: { messages: normalizedMessages },
-            parameters: {
-              stream: true,
-              temperature: 0.7,
-              max_tokens: 2048,
-              enable_search: false
-            }
-          },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${key}`,
-              'X-DashScope-SSE': 'enable'
-            },
-            responseType: 'stream',
-            timeout: 120000
-          }
-        )
-      );
-      return { stream: res.data as NodeJS.ReadableStream, sessionId: realSessionId, provider: 'dashscope' as const };
+      body.temperature = 0.7;
+      body.max_tokens = 2048;
+      if (/^qwen[3-9]/.test(model)) body.enable_thinking = false;
+    } else if (model.startsWith('deepseek')) {
+      body.thinking = { type: 'disabled' };
     }
 
-    const base = (process.env.LLM_BASE_URL || 'https://api.deepseek.com/v1').replace(/\/$/, '');
-    const openaiMessages = normalizedMessages.map((m) => ({ role: m.role, content: m.content }));
-
     const res = await firstValueFrom(
-      this.http.post(
-        `${base}/chat/completions`,
-        { model, messages: openaiMessages, stream: true },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${key}`
-          },
-          responseType: 'stream',
-          timeout: 120000
-        }
-      )
+      this.http.post(`${base}/chat/completions`, body, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${key}`
+        },
+        responseType: 'stream',
+        timeout: 120000
+      })
     );
-
-    return {
-      stream: res.data as NodeJS.ReadableStream,
-      sessionId: realSessionId,
-      provider: 'openai_compatible' as const
-    };
+    return res.data as NodeJS.ReadableStream;
   }
 
   async saveAssistantMsg(userId: string, sessionId: string, content: string) {
