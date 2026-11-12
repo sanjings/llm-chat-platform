@@ -49,6 +49,8 @@ model Message {
   session    Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   role       Role
   content    String   @db.MediumText()
+  /** 推理模型的思考过程。普通回复为空；下一轮请求只带 content，不带这段思考。 */
+  reasoning  String?  @db.MediumText()
   createTime DateTime @default(now())
 
   @@index([sessionId, createTime])

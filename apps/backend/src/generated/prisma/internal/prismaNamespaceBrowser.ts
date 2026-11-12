@@ -103,6 +103,7 @@ export const MessageScalarFieldEnum = {
   sessionId: 'sessionId',
   role: 'role',
   content: 'content',
+  reasoning: 'reasoning',
   createTime: 'createTime'
 } as const
 
@@ -149,7 +150,8 @@ export type UserOrderByRelevanceFieldEnum = (typeof UserOrderByRelevanceFieldEnu
 
 export const MessageOrderByRelevanceFieldEnum = {
   sessionId: 'sessionId',
-  content: 'content'
+  content: 'content',
+  reasoning: 'reasoning'
 } as const
 
 export type MessageOrderByRelevanceFieldEnum = (typeof MessageOrderByRelevanceFieldEnum)[keyof typeof MessageOrderByRelevanceFieldEnum]

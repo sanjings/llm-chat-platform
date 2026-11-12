@@ -68,6 +68,30 @@ export const resolveFrontendModel = (modelId: string | undefined, fallback: Reso
 };
 
 /**
+ * 支持推理的模型打开思考。普通模型不带这些字段，请求体与原来一致。
+ * 通义 qwen3+：enable_thinking。DeepSeek：thinking.type。
+ */
+export const buildProviderChatBody = (
+  provider: LlmProviderName,
+  model: string,
+  messages: ChatStreamMessage[]
+): Record<string, unknown> => {
+  const body: Record<string, unknown> = {
+    model,
+    messages: messages.map((item) => ({ role: item.role, content: item.content })),
+    stream: true
+  };
+  if (provider === 'dashscope') {
+    body.temperature = 0.7;
+    body.max_tokens = 2048;
+    if (/^qwen[3-9]/.test(model)) body.enable_thinking = true;
+  } else if (model.startsWith('deepseek')) {
+    body.thinking = { type: 'enabled' };
+  }
+  return body;
+};
+
+/**
  * 聊天业务：写库 + 调大模型。
  * 流式接口的细节在 Controller 里（转发 SSE、结束时把助手回复再写入数据库）。
  */
@@ -181,7 +205,13 @@ export class ChatService {
     return merged;
   }
 
-  async sendMsg(userId: string, role: string, content: string, sessionId?: string, opts?: { llmModelId?: string }) {
+  async sendMsg(
+    userId: string,
+    role: string,
+    content: string,
+    sessionId?: string,
+    opts?: { llmModelId?: string; reasoning?: string }
+  ) {
     let realSessionId = sessionId?.trim() || undefined;
     if (!realSessionId || !(await this.sessionService.existSession(realSessionId, userId))) {
       const newSession = await this.sessionService.createSession(userId, content, opts?.llmModelId);
@@ -191,8 +221,14 @@ export class ChatService {
     }
 
     const dbRole = lowerCaseToRole(role);
+    const reasoning = opts?.reasoning?.trim();
     const msg = await this.prisma.message.create({
-      data: { sessionId: realSessionId, role: dbRole, content }
+      data: {
+        sessionId: realSessionId,
+        role: dbRole,
+        content,
+        ...(reasoning ? { reasoning } : {})
+      }
     });
     return { ...msg, role: roleToLowerCase(msg.role), sessionId: realSessionId };
   }
@@ -242,9 +278,8 @@ export class ChatService {
   }
 
   /**
-   * 通义当前模型走 DashScope 的 OpenAI 兼容接口（北京旧域名仍可用），
-   * 返回的 SSE 与 DeepSeek 一样是 delta.content，前端解析器已兼容。
-   * 对话界面只渲染 content，因此关闭思考模式，避免推理片段占满输出且界面空白。
+   * 通义当前模型走 DashScope 的 OpenAI 兼容接口（北京旧域名仍可用）。
+   * 支持推理的通义和 DeepSeek 打开思考；思考在独立字段返回，正文仍是 content。
    */
   private async openProviderStream(
     provider: LlmProviderName,
@@ -252,23 +287,11 @@ export class ChatService {
     messages: ChatStreamMessage[],
     key: string
   ) {
-    const openaiMessages = messages.map((item) => ({ role: item.role, content: item.content }));
     const base =
       provider === 'dashscope'
         ? (process.env.DASHSCOPE_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1').replace(/\/$/, '')
         : (process.env.LLM_BASE_URL || 'https://api.deepseek.com/v1').replace(/\/$/, '');
-    const body: Record<string, unknown> = {
-      model,
-      messages: openaiMessages,
-      stream: true
-    };
-    if (provider === 'dashscope') {
-      body.temperature = 0.7;
-      body.max_tokens = 2048;
-      if (/^qwen[3-9]/.test(model)) body.enable_thinking = false;
-    } else if (model.startsWith('deepseek')) {
-      body.thinking = { type: 'disabled' };
-    }
+    const body = buildProviderChatBody(provider, model, messages);
 
     const res = await firstValueFrom(
       this.http.post(`${base}/chat/completions`, body, {
@@ -283,9 +306,10 @@ export class ChatService {
     return res.data as NodeJS.ReadableStream;
   }
 
-  async saveAssistantMsg(userId: string, sessionId: string, content: string) {
+  async saveAssistantMsg(userId: string, sessionId: string, content: string, reasoning?: string) {
     const text = content.trim();
     if (!text) return;
-    await this.sendMsg(userId, 'assistant', text, sessionId);
+    const thought = reasoning?.trim();
+    await this.sendMsg(userId, 'assistant', text, sessionId, thought ? { reasoning: thought } : undefined);
   }
 }

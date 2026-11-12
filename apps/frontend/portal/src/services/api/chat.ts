@@ -1,5 +1,5 @@
 import type { Message } from '@/store/chat';
-import { readStream } from '@/utils/stream';
+import { readStream, type StreamTextDelta } from '@/utils/stream';
 import { getCache } from '@/utils/cache';
 import { safeParse } from '@/utils';
 import { ApiResponseCode, requestGet } from '@/services/request';
@@ -18,7 +18,7 @@ export type ChatModelOption = {
 export async function requestChat(
   messages: Message[],
   sessionId: string | null,
-  onDelta: (text: string) => void,
+  onDelta: (delta: StreamTextDelta) => void,
   options?: { modelId?: string; signal?: AbortSignal; responseFormat?: ResponseFormatType }
 ) {
   const token = safeParse(getCache('STORE_USER'))?.state?.token;

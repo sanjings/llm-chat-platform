@@ -8,8 +8,16 @@ function resolveStagedFiles(filenames) {
   return filenames.map((f) => (path.isAbsolute(f) ? f : path.resolve(root, f)));
 }
 
+/** 已跟踪的 Prisma Client 在 gitignore 中，lint-staged 再 git add 会失败。 */
+const withoutGenerated = (filenames) => filenames.filter((filename) => !filename.includes(`${path.sep}generated${path.sep}`));
+
 export default {
-  '*.{js,jsx,ts,tsx}': ['eslint --fix --cache', 'prettier --write'],
+  '*.{js,jsx,ts,tsx}': (filenames) => {
+    const files = withoutGenerated(filenames);
+    if (!files.length) return [];
+    const list = files.map((filename) => JSON.stringify(filename)).join(' ');
+    return [`eslint --fix --cache ${list}`, `prettier --write ${list}`];
+  },
   '*.{html,scss,css,less,sass}': [
     (filenames) => {
       if (!filenames.length) return [];

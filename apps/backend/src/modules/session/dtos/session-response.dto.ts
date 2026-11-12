@@ -36,6 +36,12 @@ export class SessionMessageDto {
   @ApiProperty()
   content: string;
 
+  @ApiPropertyOptional({
+    nullable: true,
+    description: '推理模型的思考过程。普通回复为空，不替代 content 正文'
+  })
+  reasoning?: string | null;
+
   @ApiProperty({ type: String, format: 'date-time' })
   createTime: Date;
 }
