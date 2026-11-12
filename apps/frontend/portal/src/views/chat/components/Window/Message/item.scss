@@ -12,6 +12,26 @@
     background-color: var(--msg-user-bg);
   }
 
+  .message-reasoning {
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    background-color: var(--surface-muted);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+
+    summary {
+      cursor: pointer;
+    }
+  }
+
+  .message-reasoning-body {
+    margin-top: 6px;
+    white-space: pre-wrap;
+  }
+
   // &--assistant {
   // background-color: var(--msg-assistant-bg);
   // }

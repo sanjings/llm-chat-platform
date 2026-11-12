@@ -1,4 +1,4 @@
-import { ChatService, resolveFrontendModel } from './chat.services';
+import { ChatService, buildProviderChatBody, resolveFrontendModel } from './chat.services';
 
 const ENV_KEYS = ['LLM_PROVIDER', 'LLM_API_KEY', 'LLM_MODEL', 'DASHSCOPE_API_KEY', 'DEEPSEEK_API_KEY'] as const;
 
@@ -100,5 +100,40 @@ describe('chat model routing', () => {
       provider: 'dashscope',
       model: 'qwen3.7-plus'
     });
+  });
+
+  it('enables thinking only for reasoning models and keeps the previous request shape', () => {
+    const messages = [{ role: 'user', content: '你好' }];
+
+    expect(buildProviderChatBody('dashscope', 'qwen3.7-plus', messages)).toEqual({
+      model: 'qwen3.7-plus',
+      messages,
+      stream: true,
+      temperature: 0.7,
+      max_tokens: 2048,
+      enable_thinking: true
+    });
+    expect(buildProviderChatBody('dashscope', 'qwen3.8-max', messages).enable_thinking).toBe(true);
+    expect(buildProviderChatBody('dashscope', 'qwen3.8-flash', messages).enable_thinking).toBe(true);
+
+    const legacyQwen = buildProviderChatBody('dashscope', 'qwen-max', messages);
+    expect(legacyQwen).toMatchObject({ temperature: 0.7, max_tokens: 2048, stream: true });
+    expect(legacyQwen).not.toHaveProperty('enable_thinking');
+    expect(buildProviderChatBody('dashscope', 'qwen2.5-72b-instruct', messages)).not.toHaveProperty('enable_thinking');
+
+    expect(buildProviderChatBody('openai_compatible', 'deepseek-v4-pro', messages)).toEqual({
+      model: 'deepseek-v4-pro',
+      messages,
+      stream: true,
+      thinking: { type: 'enabled' }
+    });
+    expect(buildProviderChatBody('openai_compatible', 'deepseek-flash', messages).thinking).toEqual({
+      type: 'enabled'
+    });
+
+    const plain = buildProviderChatBody('openai_compatible', 'gpt-4o-mini', messages);
+    expect(plain).toEqual({ model: 'gpt-4o-mini', messages, stream: true });
+    expect(plain).not.toHaveProperty('thinking');
+    expect(plain).not.toHaveProperty('enable_thinking');
   });
 });

@@ -39,6 +39,7 @@ export type MessageMinAggregateOutputType = {
   sessionId: string | null
   role: $Enums.Role | null
   content: string | null
+  reasoning: string | null
   createTime: Date | null
 }
 
@@ -47,6 +48,7 @@ export type MessageMaxAggregateOutputType = {
   sessionId: string | null
   role: $Enums.Role | null
   content: string | null
+  reasoning: string | null
   createTime: Date | null
 }
 
@@ -55,6 +57,7 @@ export type MessageCountAggregateOutputType = {
   sessionId: number
   role: number
   content: number
+  reasoning: number
   createTime: number
   _all: number
 }
@@ -73,6 +76,7 @@ export type MessageMinAggregateInputType = {
   sessionId?: true
   role?: true
   content?: true
+  reasoning?: true
   createTime?: true
 }
 
@@ -81,6 +85,7 @@ export type MessageMaxAggregateInputType = {
   sessionId?: true
   role?: true
   content?: true
+  reasoning?: true
   createTime?: true
 }
 
@@ -89,6 +94,7 @@ export type MessageCountAggregateInputType = {
   sessionId?: true
   role?: true
   content?: true
+  reasoning?: true
   createTime?: true
   _all?: true
 }
@@ -184,6 +190,7 @@ export type MessageGroupByOutputType = {
   sessionId: string
   role: $Enums.Role
   content: string
+  reasoning: string | null
   createTime: Date
   _count: MessageCountAggregateOutputType | null
   _avg: MessageAvgAggregateOutputType | null
@@ -215,6 +222,7 @@ export type MessageWhereInput = {
   sessionId?: Prisma.StringFilter<"Message"> | string
   role?: Prisma.EnumRoleFilter<"Message"> | $Enums.Role
   content?: Prisma.StringFilter<"Message"> | string
+  reasoning?: Prisma.StringNullableFilter<"Message"> | string | null
   createTime?: Prisma.DateTimeFilter<"Message"> | Date | string
   session?: Prisma.XOR<Prisma.SessionScalarRelationFilter, Prisma.SessionWhereInput>
 }
@@ -224,6 +232,7 @@ export type MessageOrderByWithRelationInput = {
   sessionId?: Prisma.SortOrder
   role?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  reasoning?: Prisma.SortOrderInput | Prisma.SortOrder
   createTime?: Prisma.SortOrder
   session?: Prisma.SessionOrderByWithRelationInput
   _relevance?: Prisma.MessageOrderByRelevanceInput
@@ -237,6 +246,7 @@ export type MessageWhereUniqueInput = Prisma.AtLeast<{
   sessionId?: Prisma.StringFilter<"Message"> | string
   role?: Prisma.EnumRoleFilter<"Message"> | $Enums.Role
   content?: Prisma.StringFilter<"Message"> | string
+  reasoning?: Prisma.StringNullableFilter<"Message"> | string | null
   createTime?: Prisma.DateTimeFilter<"Message"> | Date | string
   session?: Prisma.XOR<Prisma.SessionScalarRelationFilter, Prisma.SessionWhereInput>
 }, "id">
@@ -246,6 +256,7 @@ export type MessageOrderByWithAggregationInput = {
   sessionId?: Prisma.SortOrder
   role?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  reasoning?: Prisma.SortOrderInput | Prisma.SortOrder
   createTime?: Prisma.SortOrder
   _count?: Prisma.MessageCountOrderByAggregateInput
   _avg?: Prisma.MessageAvgOrderByAggregateInput
@@ -262,12 +273,14 @@ export type MessageScalarWhereWithAggregatesInput = {
   sessionId?: Prisma.StringWithAggregatesFilter<"Message"> | string
   role?: Prisma.EnumRoleWithAggregatesFilter<"Message"> | $Enums.Role
   content?: Prisma.StringWithAggregatesFilter<"Message"> | string
+  reasoning?: Prisma.StringNullableWithAggregatesFilter<"Message"> | string | null
   createTime?: Prisma.DateTimeWithAggregatesFilter<"Message"> | Date | string
 }
 
 export type MessageCreateInput = {
   role: $Enums.Role
   content: string
+  reasoning?: string | null
   createTime?: Date | string
   session: Prisma.SessionCreateNestedOneWithoutMessagesInput
 }
@@ -277,12 +290,14 @@ export type MessageUncheckedCreateInput = {
   sessionId: string
   role: $Enums.Role
   content: string
+  reasoning?: string | null
   createTime?: Date | string
 }
 
 export type MessageUpdateInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  reasoning?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   session?: Prisma.SessionUpdateOneRequiredWithoutMessagesNestedInput
 }
@@ -292,6 +307,7 @@ export type MessageUncheckedUpdateInput = {
   sessionId?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  reasoning?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -300,12 +316,14 @@ export type MessageCreateManyInput = {
   sessionId: string
   role: $Enums.Role
   content: string
+  reasoning?: string | null
   createTime?: Date | string
 }
 
 export type MessageUpdateManyMutationInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  reasoning?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -314,6 +332,7 @@ export type MessageUncheckedUpdateManyInput = {
   sessionId?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  reasoning?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -338,6 +357,7 @@ export type MessageCountOrderByAggregateInput = {
   sessionId?: Prisma.SortOrder
   role?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  reasoning?: Prisma.SortOrder
   createTime?: Prisma.SortOrder
 }
 
@@ -350,6 +370,7 @@ export type MessageMaxOrderByAggregateInput = {
   sessionId?: Prisma.SortOrder
   role?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  reasoning?: Prisma.SortOrder
   createTime?: Prisma.SortOrder
 }
 
@@ -358,6 +379,7 @@ export type MessageMinOrderByAggregateInput = {
   sessionId?: Prisma.SortOrder
   role?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  reasoning?: Prisma.SortOrder
   createTime?: Prisma.SortOrder
 }
 
@@ -422,6 +444,7 @@ export type IntFieldUpdateOperationsInput = {
 export type MessageCreateWithoutSessionInput = {
   role: $Enums.Role
   content: string
+  reasoning?: string | null
   createTime?: Date | string
 }
 
@@ -429,6 +452,7 @@ export type MessageUncheckedCreateWithoutSessionInput = {
   id?: number
   role: $Enums.Role
   content: string
+  reasoning?: string | null
   createTime?: Date | string
 }
 
@@ -466,6 +490,7 @@ export type MessageScalarWhereInput = {
   sessionId?: Prisma.StringFilter<"Message"> | string
   role?: Prisma.EnumRoleFilter<"Message"> | $Enums.Role
   content?: Prisma.StringFilter<"Message"> | string
+  reasoning?: Prisma.StringNullableFilter<"Message"> | string | null
   createTime?: Prisma.DateTimeFilter<"Message"> | Date | string
 }
 
@@ -473,12 +498,14 @@ export type MessageCreateManySessionInput = {
   id?: number
   role: $Enums.Role
   content: string
+  reasoning?: string | null
   createTime?: Date | string
 }
 
 export type MessageUpdateWithoutSessionInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  reasoning?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -486,6 +513,7 @@ export type MessageUncheckedUpdateWithoutSessionInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  reasoning?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -493,6 +521,7 @@ export type MessageUncheckedUpdateManyWithoutSessionInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  reasoning?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -503,6 +532,7 @@ export type MessageSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   sessionId?: boolean
   role?: boolean
   content?: boolean
+  reasoning?: boolean
   createTime?: boolean
   session?: boolean | Prisma.SessionDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["message"]>
@@ -514,10 +544,11 @@ export type MessageSelectScalar = {
   sessionId?: boolean
   role?: boolean
   content?: boolean
+  reasoning?: boolean
   createTime?: boolean
 }
 
-export type MessageOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "sessionId" | "role" | "content" | "createTime", ExtArgs["result"]["message"]>
+export type MessageOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "sessionId" | "role" | "content" | "reasoning" | "createTime", ExtArgs["result"]["message"]>
 export type MessageInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   session?: boolean | Prisma.SessionDefaultArgs<ExtArgs>
 }
@@ -532,6 +563,10 @@ export type $MessagePayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     sessionId: string
     role: $Enums.Role
     content: string
+    /**
+     * * 推理模型的思考过程。普通回复为空；下一轮请求只带 content，不带这段思考。
+     */
+    reasoning: string | null
     createTime: Date
   }, ExtArgs["result"]["message"]>
   composites: {}
@@ -907,6 +942,7 @@ export interface MessageFieldRefs {
   readonly sessionId: Prisma.FieldRef<"Message", 'String'>
   readonly role: Prisma.FieldRef<"Message", 'Role'>
   readonly content: Prisma.FieldRef<"Message", 'String'>
+  readonly reasoning: Prisma.FieldRef<"Message", 'String'>
   readonly createTime: Prisma.FieldRef<"Message", 'DateTime'>
 }
     

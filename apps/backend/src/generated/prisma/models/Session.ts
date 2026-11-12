@@ -640,7 +640,7 @@ export type $SessionPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     title: string
     userId: string
     /**
-     * * 本会话绑定的前端模型标识（如 qwen-max）；首条对话写入后不可切换
+     * * 本会话绑定的前端模型标识（如 qwen3.7-plus）；首条对话写入后不可切换
      */
     llmModelId: string | null
     createTime: Date

@@ -14,6 +14,8 @@ export type Message = PartialKey<
 > & {
   localId?: string;
   requestId?: string;
+  /** 推理过程。有思考时和正文分开；普通消息没有该字段。 */
+  reasoning?: string | null;
 };
 
 export const DRAFT_SESSION_KEY = '__draft__';
@@ -52,7 +54,9 @@ type ChatState = {
 
 const controllers = new Map<string, AbortController>();
 const rafIds = new Map<string, number>();
-const buffers = new Map<string, string>();
+type PendingDelta = { content: string; reasoning: string };
+const buffers = new Map<string, PendingDelta>();
+const emptyPending = (): PendingDelta => ({ content: '', reasoning: '' });
 const MAX_CONTEXT_MESSAGES = 12;
 const MAX_CONTEXT_CHARS = 10000;
 
@@ -162,10 +166,14 @@ export const useChatStore = create<ChatState>()((set, get) => ({
       const res = await requestSessionMessagesSessionId({ sessionId });
       if (res.code !== ApiResponseCode.SUCCESS) return;
 
-      const list = (res.data.list || []).map((msg) => ({
-        ...msg,
-        localId: String(msg.id || createLocalId())
-      }));
+      const list = (res.data.list || []).map((msg) => {
+        const reasoning = (msg as { reasoning?: string | null }).reasoning;
+        return {
+          ...msg,
+          ...(typeof reasoning === 'string' && reasoning ? { reasoning } : {}),
+          localId: String(msg.id || createLocalId())
+        };
+      });
 
       set((state) => ({
         messagesBySession: {
@@ -195,7 +203,7 @@ export const useChatStore = create<ChatState>()((set, get) => ({
 
     controllers.get(sessionKey)?.abort();
     controllers.set(sessionKey, controller);
-    buffers.set(sessionKey, '');
+    buffers.set(sessionKey, emptyPending());
 
     set((state) => {
       const prev = state.messagesBySession[sessionKey] || [];
@@ -214,9 +222,9 @@ export const useChatStore = create<ChatState>()((set, get) => ({
     });
 
     const flushDelta = () => {
-      const chunk = buffers.get(sessionKey) || '';
-      if (!chunk) return;
-      buffers.set(sessionKey, '');
+      const pending = buffers.get(sessionKey) || emptyPending();
+      if (!pending.content && !pending.reasoning) return;
+      buffers.set(sessionKey, emptyPending());
       set((state) => {
         const stream = ensureStreamState(state.streamBySession[sessionKey]);
         if (stream.requestId !== requestId) return state;
@@ -225,7 +233,12 @@ export const useChatStore = create<ChatState>()((set, get) => ({
         for (let i = next.length - 1; i >= 0; i -= 1) {
           const msg = next[i];
           if (msg.role === 'assistant' && msg.requestId === requestId) {
-            next[i] = { ...msg, content: (msg.content || '') + chunk };
+            const reasoning = pending.reasoning ? `${msg.reasoning || ''}${pending.reasoning}` : msg.reasoning;
+            next[i] = {
+              ...msg,
+              content: (msg.content || '') + pending.content,
+              ...(reasoning ? { reasoning } : {})
+            };
             break;
           }
         }
@@ -239,11 +252,15 @@ export const useChatStore = create<ChatState>()((set, get) => ({
       });
     };
 
-    const enqueueDelta = (delta: string) => {
-      if (!delta) return;
+    const enqueueDelta = (delta: { content: string; reasoning: string }) => {
+      if (!delta.content && !delta.reasoning) return;
       const stream = ensureStreamState(get().streamBySession[sessionKey]);
       if (stream.requestId !== requestId) return;
-      buffers.set(sessionKey, (buffers.get(sessionKey) || '') + delta);
+      const pending = buffers.get(sessionKey) || emptyPending();
+      buffers.set(sessionKey, {
+        content: pending.content + delta.content,
+        reasoning: pending.reasoning + delta.reasoning
+      });
       if (rafIds.has(sessionKey)) return;
       const rafId = requestAnimationFrame(() => {
         rafIds.delete(sessionKey);
