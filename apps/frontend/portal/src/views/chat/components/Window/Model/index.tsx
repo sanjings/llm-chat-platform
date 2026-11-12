@@ -1,5 +1,5 @@
 import { Segmented, Typography } from 'antd';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import './index.scss';
 import { DEFAULT_MODEL_ID, ModelType } from '@/constants/chat';
 import { requestChatModels, type ChatModelOption } from '@/services/api/chat';
@@ -12,11 +12,12 @@ const fallbackModels = (available: boolean): ChatModelOption[] =>
     unavailableReason: null
   }));
 
-const pickModel = (list: ChatModelOption[], current: string) => {
-  if (list.some((item) => item.id === current && item.available)) return current;
-  const preferred = list.find((item) => item.id === DEFAULT_MODEL_ID && item.available);
+const firstAvailable = (list: ChatModelOption[], preferredId: string) => {
+  const preferred = list.find((item) => item.id === preferredId && item.available);
   if (preferred) return preferred.id;
-  return list.find((item) => item.available)?.id || current;
+  const builtin = list.find((item) => item.id === DEFAULT_MODEL_ID && item.available);
+  if (builtin) return builtin.id;
+  return list.find((item) => item.available)?.id || preferredId || DEFAULT_MODEL_ID;
 };
 
 const uniqueReasons = (list: ChatModelOption[]) => {
@@ -35,15 +36,19 @@ const Model: React.FC<{ onChange: (model: string) => void }> = ({ onChange }) =>
   const [models, setModels] = useState<ChatModelOption[]>(() => fallbackModels(false));
   const [model, setModel] = useState<string>(DEFAULT_MODEL_ID);
   const [hint, setHint] = useState('正在确认模型是否可用');
+  const pickedByUser = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
     requestChatModels()
-      .then((list) => {
+      .then(({ models: list, defaultModelId }) => {
         if (cancelled || !list.length) return;
         setModels(list);
         setHint('');
-        setModel((current) => pickModel(list, current));
+        setModel((current) => {
+          if (pickedByUser.current && list.some((item) => item.id === current && item.available)) return current;
+          return firstAvailable(list, defaultModelId);
+        });
       })
       .catch(() => {
         if (cancelled) return;
@@ -73,7 +78,10 @@ const Model: React.FC<{ onChange: (model: string) => void }> = ({ onChange }) =>
             value: item.id,
             disabled: !item.available
           }))}
-          onChange={setModel}
+          onChange={(value) => {
+            pickedByUser.current = true;
+            setModel(value);
+          }}
         />
       </div>
       {reasons.map((reason) => (

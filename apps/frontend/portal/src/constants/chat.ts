@@ -1,4 +1,7 @@
-/** 与后端可选列表一致，取值即上游官方模型名 */
+/**
+ * 未配置部署覆盖时的正式目录，只在模型接口尚未返回时作占位。
+ * 界面上的可选列表和默认模型以 GET /api/chat/models 为准。
+ */
 export const ModelType = {
   QWEN3_8_MAX: 'qwen3.8-max',
   QWEN3_7_PLUS: 'qwen3.7-plus',
