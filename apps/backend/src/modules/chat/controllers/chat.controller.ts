@@ -18,11 +18,14 @@ export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
   @Get('models')
-  @ApiOperation({ summary: '可选模型及密钥是否已配置' })
+  @ApiOperation({ summary: '当前部署的可选模型、默认模型，以及密钥是否已配置' })
   @ApiOkResponse({ type: ChatModelListDto })
   @ApiProduces('application/json')
   listModels() {
-    return { models: this.chatService.listSelectableModels() };
+    return {
+      models: this.chatService.listSelectableModels(),
+      defaultModelId: this.chatService.defaultModelId()
+    };
   }
 
   @Post('stream')

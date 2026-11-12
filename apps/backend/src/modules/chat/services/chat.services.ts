@@ -19,19 +19,52 @@ export type SelectableChatModel = {
 };
 
 type ResolvedLlm = { provider: LlmProviderName; model: string };
+type CatalogModel = { id: string; provider: LlmProviderName; model: string };
 
 /**
- * 新会话可选模型。id 与上游官方模型名一致。
+ * 仓库内正式可选目录。未配置部署覆盖时，接口返回这份列表。
  * 通义取百炼当前推荐的文本模型（不含仅 Token Plan 的预览版）；
  * DeepSeek 取 2026-07-24 停用 deepseek-chat / deepseek-reasoner 之后的现用名。
  */
-const SELECTABLE_MODELS: Array<{ id: string; provider: LlmProviderName; model: string }> = [
+const BUILTIN_DASHSCOPE_MODELS: CatalogModel[] = [
   { id: 'qwen3.8-max', provider: 'dashscope', model: 'qwen3.8-max' },
   { id: 'qwen3.7-plus', provider: 'dashscope', model: 'qwen3.7-plus' },
-  { id: 'qwen3.8-flash', provider: 'dashscope', model: 'qwen3.8-flash' },
+  { id: 'qwen3.8-flash', provider: 'dashscope', model: 'qwen3.8-flash' }
+];
+
+const BUILTIN_DEEPSEEK_MODELS: CatalogModel[] = [
   { id: 'deepseek-flash', provider: 'openai_compatible', model: 'deepseek-flash' },
   { id: 'deepseek-v4-pro', provider: 'openai_compatible', model: 'deepseek-v4-pro' }
 ];
+
+const SELECTABLE_MODELS: CatalogModel[] = [...BUILTIN_DASHSCOPE_MODELS, ...BUILTIN_DEEPSEEK_MODELS];
+
+/**
+ * 某一厂商的可选列表覆盖。逗号分隔，空白项忽略，同名只保留第一次。
+ * 未配置或解析后为空则返回 null，调用方继续用正式目录。
+ * 名单里的 ID 可以不在正式目录中，线路由所在变量决定。
+ */
+const catalogFromOverride = (raw: string | undefined, provider: LlmProviderName): CatalogModel[] | null => {
+  if (!raw?.trim()) return null;
+  const models: CatalogModel[] = [];
+  const seen = new Set<string>();
+  for (const part of raw.split(',')) {
+    const id = part.trim();
+    if (!id) continue;
+    const key = id.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    models.push({ id, provider, model: id });
+  }
+  return models.length ? models : null;
+};
+
+/** 当前部署的可选列表。只覆盖已配置的那一侧，另一侧保持正式目录。 */
+const resolveSelectableCatalog = (): CatalogModel[] => {
+  const dashscope = catalogFromOverride(process.env.LLM_DASHSCOPE_MODELS, 'dashscope') ?? BUILTIN_DASHSCOPE_MODELS;
+  const deepseek = catalogFromOverride(process.env.LLM_DEEPSEEK_MODELS, 'openai_compatible') ?? BUILTIN_DEEPSEEK_MODELS;
+  return [...dashscope, ...deepseek];
+};
 
 /** 旧会话或线路别名仍能路由；不出现在可选列表里 */
 const LEGACY_MODEL_MAP: Record<string, ResolvedLlm> = {
@@ -56,14 +89,28 @@ const missingKeyReason = (provider: LlmProviderName) =>
     ? '未配置通义 DashScope API Key，通义模型不可选'
     : '未配置 DeepSeek API Key，DeepSeek 模型不可选';
 
-export const resolveFrontendModel = (modelId: string | undefined, fallback: ResolvedLlm): ResolvedLlm => {
+/**
+ * 把请求或会话上的模型 ID 解析成线路和上游模型名。
+ * catalog 是当前部署的可选列表。未命中时仍按正式目录和旧别名路由，
+ * 已绑定的模型移出可选列表后可以继续对话。
+ * 其余 ID：qwen* 走 dashscope，deepseek* 走 openai_compatible，再否则用 fallback 线路。
+ */
+export const resolveFrontendModel = (
+  modelId: string | undefined,
+  fallback: ResolvedLlm,
+  catalog: readonly CatalogModel[] = SELECTABLE_MODELS
+): ResolvedLlm => {
   const raw = modelId?.trim();
   if (!raw) return fallback;
   const key = raw.toLowerCase();
-  const selectable = SELECTABLE_MODELS.find((item) => item.id === key);
-  if (selectable) return { provider: selectable.provider, model: selectable.model };
+  const fromCatalog = catalog.find((item) => item.id.toLowerCase() === key);
+  if (fromCatalog) return { provider: fromCatalog.provider, model: fromCatalog.model };
+  const builtin = SELECTABLE_MODELS.find((item) => item.id.toLowerCase() === key);
+  if (builtin) return { provider: builtin.provider, model: builtin.model };
   const legacy = LEGACY_MODEL_MAP[key];
   if (legacy) return legacy;
+  if (key.startsWith('qwen')) return { provider: 'dashscope', model: raw };
+  if (key.startsWith('deepseek')) return { provider: 'openai_compatible', model: raw };
   return { provider: fallback.provider, model: raw };
 };
 
@@ -117,15 +164,28 @@ export class ChatService {
     return 'dashscope';
   }
 
+  /**
+   * 未传 modelId 时的模型名，也是 GET /api/chat/models 的 defaultModelId。
+   * LLM_MODEL 优先；不配则按 LLM_PROVIDER：通义 qwen3.7-plus，DeepSeek deepseek-flash。
+   * 不另设一套默认值。可选列表被覆盖时，请把 LLM_MODEL 设成仍在列表中的 ID。
+   */
   private resolveModel(explicit?: string): string {
     if (explicit?.trim()) return explicit.trim();
     if (process.env.LLM_MODEL?.trim()) return process.env.LLM_MODEL.trim();
     return this.llmProvider() === 'dashscope' ? DEFAULT_DASHSCOPE_MODEL : DEFAULT_DEEPSEEK_MODEL;
   }
 
+  defaultModelId(): string {
+    return this.resolveModel();
+  }
+
   /** 一次请求内用哪个网关、哪个模型名 */
   private resolveLlmFromRequest(modelId?: string): ResolvedLlm {
-    return resolveFrontendModel(modelId, { provider: this.llmProvider(), model: this.resolveModel() });
+    return resolveFrontendModel(
+      modelId,
+      { provider: this.llmProvider(), model: this.resolveModel() },
+      resolveSelectableCatalog()
+    );
   }
 
   /**
@@ -151,9 +211,9 @@ export class ChatService {
     return key;
   }
 
-  /** 给新会话选择器用：只暴露当前模型，并写明缺哪家密钥 */
+  /** 给新会话选择器用：只暴露当前部署的可选模型，并写明缺哪家密钥 */
   listSelectableModels(): SelectableChatModel[] {
-    return SELECTABLE_MODELS.map((item) => {
+    return resolveSelectableCatalog().map((item) => {
       const available = Boolean(this.apiKeyFor(item.provider));
       return {
         id: item.id,

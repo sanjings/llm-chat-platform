@@ -32,8 +32,9 @@ export class ChatDto {
   sessionId?: string;
 
   /**
-   * 多模型：传模型名或线路标识；命中后端映射则决定走 DashScope 还是 OpenAI 兼容网关。
+   * 多模型：传模型名或线路标识；命中当前部署的可选列表、正式目录、旧别名，或 qwen* / deepseek* 前缀则决定线路。
    * 已有 sessionId 且会话已绑定 llmModelId 时以库为准；若再传且与绑定不一致则 400。
+   * 绑定模型即使已不在可选列表中，后续消息仍使用该模型。
    */
   @ApiPropertyOptional({ example: 'qwen3.7-plus' })
   @IsOptional()
@@ -63,4 +64,10 @@ export class ChatModelOptionDto {
 export class ChatModelListDto {
   @ApiProperty({ type: [ChatModelOptionDto] })
   models: ChatModelOptionDto[];
+
+  @ApiProperty({
+    example: 'qwen3.7-plus',
+    description: '未传 modelId 时使用的模型，与 LLM_MODEL 相同。未配置 LLM_MODEL 时为当前 LLM_PROVIDER 的内置默认模型'
+  })
+  defaultModelId: string;
 }

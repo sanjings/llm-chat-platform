@@ -12,6 +12,11 @@ export type ChatModelOption = {
   unavailableReason?: string | null;
 };
 
+export type ChatModelList = {
+  models: ChatModelOption[];
+  defaultModelId: string;
+};
+
 /**
  * 流式对话
  */
@@ -48,11 +53,14 @@ export async function requestChat(
   return { sessionId: nextSessionId };
 }
 
-/** 新会话可选模型。可用性由服务端按已配置的 API Key 计算。 */
+/** 当前部署的可选模型与默认模型。可用性由服务端按已配置的 API Key 计算。 */
 export const requestChatModels = async () => {
-  const res = await requestGet<{ models: ChatModelOption[] }>('/api/chat/models');
+  const res = await requestGet<ChatModelList>('/api/chat/models');
   if (res.code !== ApiResponseCode.SUCCESS || !Array.isArray(res.data?.models)) {
     throw new Error(res.message || '模型列表加载失败');
   }
-  return res.data.models;
+  return {
+    models: res.data.models,
+    defaultModelId: typeof res.data.defaultModelId === 'string' ? res.data.defaultModelId.trim() : ''
+  };
 };
