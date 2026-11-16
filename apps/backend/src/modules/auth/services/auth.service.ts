@@ -8,6 +8,16 @@ import { LoginDto, RefreshTokenDto, RegisterDto } from '../dtos/auth.dto';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { UserService } from 'src/modules/user/services/user.service';
 
+/** 注册接口关闭时返回的文案。登录页据此收起注册入口。 */
+export const REGISTRATION_CLOSED_MESSAGE = '当前未开放注册';
+
+/**
+ * 部署时用 AUTH_REGISTRATION_ENABLED 控制是否允许新用户注册。
+ * 未配置、留空，或取值不是 false 时保持开放，与未加该开关前一致。
+ */
+export const isRegistrationEnabled = () =>
+  (process.env.AUTH_REGISTRATION_ENABLED ?? '').trim().toLowerCase() !== 'false';
+
 @Injectable()
 export class AuthService {
   private readonly accessExpiresInSeconds: number;
@@ -29,11 +39,17 @@ export class AuthService {
     );
   }
 
+  getPublicConfig() {
+    return { registrationEnabled: isRegistrationEnabled() };
+  }
+
   async register(body: RegisterDto) {
+    this.assertRegistrationOpen();
     await this.userService.createUser({ ...body, password: this.hashPassword(body.password) });
   }
 
   async registerLogin(body: RegisterDto) {
+    this.assertRegistrationOpen();
     const user = await this.userService.createUser({ ...body, password: this.hashPassword(body.password) });
 
     return this.buildAuthResponse(user.id, user.phone, user.nickname, user.avatar ?? null);
@@ -65,6 +81,11 @@ export class AuthService {
     const nextVersion = await this.incrementTokenVersion(userId);
     await this.clearUserSessions(userId);
     return { tokenVersion: nextVersion };
+  }
+
+  private assertRegistrationOpen() {
+    if (isRegistrationEnabled()) return;
+    throw new BadRequestException(REGISTRATION_CLOSED_MESSAGE);
   }
 
   private hashPassword(password: string, salt: number = 10) {
