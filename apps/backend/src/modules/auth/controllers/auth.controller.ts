@@ -1,10 +1,10 @@
-import { Body, Controller, Headers, Post } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Post } from '@nestjs/common';
 import { AuthService } from '../services/auth.service';
 import { LoginDto, RefreshTokenDto, RegisterDto } from '../dtos/auth.dto';
 import { ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from 'src/common/decorators/public.decorator';
 import { SuccessMessage } from 'src/common/decorators/success-message.decorator';
-import { AuthTokenResponseDto, EmptySuccessDto } from '../dtos/auth-response.dto';
+import { AuthPublicConfigDto, AuthTokenResponseDto, EmptySuccessDto } from '../dtos/auth-response.dto';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { JwtPayload } from '../interfaces/jwt-payload.interface';
 
@@ -12,6 +12,14 @@ import type { JwtPayload } from '../interfaces/jwt-payload.interface';
 @ApiTags('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  @Public()
+  @Get('config')
+  @ApiOperation({ summary: '登录页读取的公开配置，包含当前部署是否开放注册' })
+  @ApiOkResponse({ type: AuthPublicConfigDto })
+  getPublicConfig() {
+    return this.authService.getPublicConfig();
+  }
 
   @Public()
   @Post('register')

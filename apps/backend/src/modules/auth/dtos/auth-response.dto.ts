@@ -32,3 +32,8 @@ export class AuthTokenResponseDto {
 }
 
 export class EmptySuccessDto {}
+
+export class AuthPublicConfigDto {
+  @ApiProperty({ description: '当前部署是否开放注册。未将 AUTH_REGISTRATION_ENABLED 设为 false 时为 true' })
+  registrationEnabled: boolean;
+}
