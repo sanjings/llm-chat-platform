@@ -57,8 +57,13 @@ const rafIds = new Map<string, number>();
 type PendingDelta = { content: string; reasoning: string };
 const buffers = new Map<string, PendingDelta>();
 const emptyPending = (): PendingDelta => ({ content: '', reasoning: '' });
-const MAX_CONTEXT_MESSAGES = 12;
-const MAX_CONTEXT_CHARS = 10000;
+/**
+ * 前端只做发送前的粗略裁剪，真正的权威裁剪在后端（会按模型和 LLM_CONTEXT_* 环境变量再裁一次）。
+ * 这里取略宽于后端现代模型默认（40 条 / 64000 字符）的传输上限，
+ * 避免前端先吃掉新增的上下文，导致部署调大 LLM_CONTEXT_* 后后端仍收不到。
+ */
+const MAX_CONTEXT_MESSAGES = 80;
+const MAX_CONTEXT_CHARS = 120000;
 
 const getSessionKey = (sessionId: string | null) => sessionId ?? DRAFT_SESSION_KEY;
 

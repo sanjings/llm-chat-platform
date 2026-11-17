@@ -114,9 +114,61 @@ export const resolveFrontendModel = (
   return { provider: fallback.provider, model: raw };
 };
 
+const parsePositiveInt = (raw: string | undefined): number | null => {
+  const text = raw?.trim();
+  if (!text || !/^\d+$/.test(text)) return null;
+  const value = Number(text);
+  return value > 0 ? value : null;
+};
+
 /**
- * 支持推理的模型打开思考。普通模型不带这些字段，请求体与原来一致。
+ * 生成长度按模型区分，默认值依据（约 2026-11 官方文档）：
+ * - 通义 qwen[3-9]*（含部署覆盖里的 qwen3.8-27b / qwen3.8-max-0902 等）：
+ *   最大输出 131072，上下文 1M。兼容模式里 max_tokens 只限制最终回答（不含思维链），
+ *   默认 16384 足以覆盖常规长文/长代码，又远低于上限，成本和 120s 请求超时都更可控。
+ * - DeepSeek deepseek*：最大输出 384K；开启思考时官方 max_tokens 默认 65536（含思维链+回答），
+ *   关闭思考时默认 8192。本项目会对 DeepSeek 开启思考，因此显式写 65536，保持与官方默认一致。
+ * - 旧通义（qwen-max / qwen-plus / qwen-turbo / qwen2.5-* 等）与未知自定义模型：
+ *   官方最大输出多为 8192（如 qwen-max），保守使用 8192，避免把 16k 打到只支持 8k 输出的旧模型上报错。
+ * LLM_MAX_TOKENS 为正整数时覆盖所有模型；空、0、负数、非整数忽略并回退按模型默认。
+ */
+export const resolveModelMaxTokens = (model: string): number => {
+  const envOverride = parsePositiveInt(process.env.LLM_MAX_TOKENS);
+  if (envOverride !== null) return envOverride;
+  if (/^deepseek/.test(model)) return 65536;
+  if (/^qwen[3-9]/.test(model)) return 16384;
+  return 8192;
+};
+
+/**
+ * 现代 1M 上下文模型：通义 qwen[3-9]*（与思考开关同一判断），
+ * DeepSeek 当前正式目录 deepseek-flash / deepseek-v4*。
+ * 默认 40 条对话、64000 字符：约 20 轮近期对话；中文 6.4 万字约为数万 token 量级，
+ * 远低于 1M 窗口，并给 16k–65k 输出留余量。
+ * 其余模型（qwen-max 上下文约 32k、最大输入 30720，qwen2.5 以及未知自定义 ID）
+ * 默认 24 条、24000 字符：比旧默认 12/12000 更宽，又能避免 64000 汉字把旧模型输入打满。
+ */
+const isModernContextModel = (model: string) =>
+  /^qwen[3-9]/.test(model) || model === 'deepseek-flash' || /^deepseek-v[4-9]/.test(model);
+
+export type ContextBudget = { maxMessages: number; maxChars: number };
+
+/**
+ * 上下文预算。LLM_CONTEXT_MAX_MESSAGES / LLM_CONTEXT_MAX_CHARS 可独立覆盖所有模型的对应预算，
+ * 只接受正整数；空或非法值忽略并回退按模型默认。
+ */
+export const resolveContextBudget = (model: string): ContextBudget => {
+  const modern = isModernContextModel(model);
+  return {
+    maxMessages: parsePositiveInt(process.env.LLM_CONTEXT_MAX_MESSAGES) ?? (modern ? 40 : 24),
+    maxChars: parsePositiveInt(process.env.LLM_CONTEXT_MAX_CHARS) ?? (modern ? 64000 : 24000)
+  };
+};
+
+/**
+ * 支持推理的模型打开思考。
  * 通义 qwen3+：enable_thinking。DeepSeek：thinking.type。
+ * max_tokens 按模型默认，未知模型也有保守兜底，避免长回答被 2048 截断。
  */
 export const buildProviderChatBody = (
   provider: LlmProviderName,
@@ -126,11 +178,11 @@ export const buildProviderChatBody = (
   const body: Record<string, unknown> = {
     model,
     messages: messages.map((item) => ({ role: item.role, content: item.content })),
-    stream: true
+    stream: true,
+    max_tokens: resolveModelMaxTokens(model)
   };
   if (provider === 'dashscope') {
     body.temperature = 0.7;
-    body.max_tokens = 2048;
     if (/^qwen[3-9]/.test(model)) body.enable_thinking = true;
   } else if (model.startsWith('deepseek')) {
     body.thinking = { type: 'enabled' };
@@ -144,8 +196,6 @@ export const buildProviderChatBody = (
  */
 @Injectable()
 export class ChatService {
-  private readonly maxContextMessages = Number(process.env.LLM_CONTEXT_MAX_MESSAGES || 12);
-  private readonly maxContextChars = Number(process.env.LLM_CONTEXT_MAX_CHARS || 12000);
   private readonly markdownSystemPrompt =
     process.env.LLM_MARKDOWN_SYSTEM_PROMPT || '请使用 Markdown 格式回答。标题、列表、代码块请按标准 Markdown 输出。';
 
@@ -228,10 +278,14 @@ export class ChatService {
    * 规范化上下文：
    * - 过滤空消息
    * - 最后一条必须是 user
-   * - 保留全部 system + 最近 N 条对话
-   * - 再按总字符预算从最老对话开始裁剪
+   * - 保留全部 system + 最近 N 条对话（N 由模型预算决定）
+   * - 再按总字符预算从最老对话开始裁剪，永不删除最后一条当前 user prompt
    */
-  private normalizeContext(messages: ChatStreamMessage[], responseFormat?: ResponseFormat): ChatStreamMessage[] {
+  private normalizeContext(
+    messages: ChatStreamMessage[],
+    budget: ContextBudget,
+    responseFormat?: ResponseFormat
+  ): ChatStreamMessage[] {
     const cleaned = messages
       .filter((m) => typeof m?.content === 'string' && m.content.trim())
       .map((m) => ({ role: String(m.role), content: m.content.trim() }));
@@ -245,11 +299,11 @@ export class ChatService {
 
     const systems = cleaned.filter((m) => m.role === 'system');
     const dialog = cleaned.filter((m) => m.role !== 'system');
-    const recentDialog = dialog.slice(-Math.max(1, this.maxContextMessages));
+    const recentDialog = dialog.slice(-Math.max(1, budget.maxMessages));
     const merged = [...systems, ...recentDialog];
 
     const totalChars = () => merged.reduce((sum, m) => sum + m.content.length, 0);
-    while (totalChars() > this.maxContextChars) {
+    while (totalChars() > budget.maxChars) {
       // 只删最老的非 system 对话，且不删最后一条（当前 user prompt）
       const removableIndex = merged.findIndex((m, i) => m.role !== 'system' && i < merged.length - 1);
       if (removableIndex < 0) break;
@@ -295,8 +349,9 @@ export class ChatService {
 
   /**
    * 1. 解析会话绑定与模型线路，缺密钥时直接拒绝，避免先写入会话
-   * 2. 把用户这条话写入数据库
-   * 3. 向大模型发起流式请求，把 Node 可读流交给 Controller 去 pipe 给浏览器
+   * 2. 按解析后的模型套用上下文预算并规范化（校验最后一条必须是 user）
+   * 3. 把用户这条话写入数据库
+   * 4. 向大模型发起流式请求，把 Node 可读流交给 Controller 去 pipe 给浏览器
    */
   async chatStream(
     userId: string,
@@ -305,9 +360,6 @@ export class ChatService {
     modelId?: string,
     responseFormat?: ResponseFormat
   ) {
-    const normalizedMessages = this.normalizeContext(messages, responseFormat);
-    const userContent = normalizedMessages[normalizedMessages.length - 1].content;
-
     let effectiveSessionId = sessionId?.trim() || undefined;
     let boundModelId: string | null = null;
     if (effectiveSessionId) {
@@ -327,6 +379,9 @@ export class ChatService {
     const effectiveModelInput = boundModelId || reqModel || undefined;
     const { provider, model } = this.resolveLlmFromRequest(effectiveModelInput);
     const key = this.resolveApiKeyFor(provider);
+
+    const normalizedMessages = this.normalizeContext(messages, resolveContextBudget(model), responseFormat);
+    const userContent = normalizedMessages[normalizedMessages.length - 1].content;
     const persistModelId = boundModelId ? undefined : reqModel || model;
 
     const msg = await this.sendMsg(userId, 'user', userContent, effectiveSessionId, {

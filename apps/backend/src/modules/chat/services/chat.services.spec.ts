@@ -1,6 +1,12 @@
 import { of } from 'rxjs';
 import { ChatController } from '../controllers/chat.controller';
-import { ChatService, buildProviderChatBody, resolveFrontendModel } from './chat.services';
+import {
+  ChatService,
+  buildProviderChatBody,
+  resolveContextBudget,
+  resolveFrontendModel,
+  resolveModelMaxTokens
+} from './chat.services';
 
 const ENV_KEYS = [
   'LLM_PROVIDER',
@@ -9,7 +15,10 @@ const ENV_KEYS = [
   'DASHSCOPE_API_KEY',
   'DEEPSEEK_API_KEY',
   'LLM_DASHSCOPE_MODELS',
-  'LLM_DEEPSEEK_MODELS'
+  'LLM_DEEPSEEK_MODELS',
+  'LLM_MAX_TOKENS',
+  'LLM_CONTEXT_MAX_MESSAGES',
+  'LLM_CONTEXT_MAX_CHARS'
 ] as const;
 
 const OFFICIAL_MODEL_IDS = ['qwen3.8-max', 'qwen3.7-plus', 'qwen3.8-flash', 'deepseek-flash', 'deepseek-v4-pro'];
@@ -139,21 +148,22 @@ describe('chat model routing', () => {
   });
 
   it('enables thinking only for reasoning models and keeps the previous request shape', () => {
+    clearLlmEnv();
     const messages = [{ role: 'user', content: '你好' }];
 
     expect(buildProviderChatBody('dashscope', 'qwen3.7-plus', messages)).toEqual({
       model: 'qwen3.7-plus',
       messages,
       stream: true,
+      max_tokens: 16384,
       temperature: 0.7,
-      max_tokens: 2048,
       enable_thinking: true
     });
     expect(buildProviderChatBody('dashscope', 'qwen3.8-max', messages).enable_thinking).toBe(true);
     expect(buildProviderChatBody('dashscope', 'qwen3.8-flash', messages).enable_thinking).toBe(true);
 
     const legacyQwen = buildProviderChatBody('dashscope', 'qwen-max', messages);
-    expect(legacyQwen).toMatchObject({ temperature: 0.7, max_tokens: 2048, stream: true });
+    expect(legacyQwen).toMatchObject({ temperature: 0.7, max_tokens: 8192, stream: true });
     expect(legacyQwen).not.toHaveProperty('enable_thinking');
     expect(buildProviderChatBody('dashscope', 'qwen2.5-72b-instruct', messages)).not.toHaveProperty('enable_thinking');
 
@@ -161,6 +171,7 @@ describe('chat model routing', () => {
       model: 'deepseek-v4-pro',
       messages,
       stream: true,
+      max_tokens: 65536,
       thinking: { type: 'enabled' }
     });
     expect(buildProviderChatBody('openai_compatible', 'deepseek-flash', messages).thinking).toEqual({
@@ -168,9 +179,43 @@ describe('chat model routing', () => {
     });
 
     const plain = buildProviderChatBody('openai_compatible', 'gpt-4o-mini', messages);
-    expect(plain).toEqual({ model: 'gpt-4o-mini', messages, stream: true });
+    expect(plain).toEqual({ model: 'gpt-4o-mini', messages, stream: true, max_tokens: 8192 });
     expect(plain).not.toHaveProperty('thinking');
     expect(plain).not.toHaveProperty('enable_thinking');
+  });
+
+  it('uses per-model default max tokens, including unknown custom models', () => {
+    clearLlmEnv();
+
+    expect(resolveModelMaxTokens('qwen3.8-max')).toBe(16384);
+    expect(resolveModelMaxTokens('qwen3.7-plus')).toBe(16384);
+    expect(resolveModelMaxTokens('qwen3.8-flash')).toBe(16384);
+    expect(resolveModelMaxTokens('qwen3.8-27b')).toBe(16384);
+    expect(resolveModelMaxTokens('qwen3.8-max-0902')).toBe(16384);
+    expect(resolveModelMaxTokens('deepseek-flash')).toBe(65536);
+    expect(resolveModelMaxTokens('deepseek-v4-pro')).toBe(65536);
+    expect(resolveModelMaxTokens('deepseek-custom')).toBe(65536);
+    expect(resolveModelMaxTokens('qwen-max')).toBe(8192);
+    expect(resolveModelMaxTokens('qwen2.5-72b-instruct')).toBe(8192);
+    expect(resolveModelMaxTokens('custom-model')).toBe(8192);
+  });
+
+  it('lets LLM_MAX_TOKENS override every model and ignores invalid values', () => {
+    clearLlmEnv();
+    process.env.LLM_MAX_TOKENS = '12345';
+
+    expect(resolveModelMaxTokens('qwen3.8-max')).toBe(12345);
+    expect(resolveModelMaxTokens('deepseek-v4-pro')).toBe(12345);
+    expect(resolveModelMaxTokens('qwen-max')).toBe(12345);
+
+    process.env.LLM_MAX_TOKENS = 'abc';
+    expect(resolveModelMaxTokens('qwen3.8-max')).toBe(16384);
+    process.env.LLM_MAX_TOKENS = '0';
+    expect(resolveModelMaxTokens('qwen3.8-max')).toBe(16384);
+    process.env.LLM_MAX_TOKENS = '-1';
+    expect(resolveModelMaxTokens('qwen3.8-max')).toBe(16384);
+    process.env.LLM_MAX_TOKENS = '1.5';
+    expect(resolveModelMaxTokens('qwen3.8-max')).toBe(16384);
   });
 
   it('keeps the built-in default when the list is overridden but LLM_MODEL is unset', () => {
@@ -262,6 +307,166 @@ describe('chat model routing', () => {
     const chat = new ChatService(sessionService as never, prisma as never, http as never);
     return { chat, http, sessionService };
   };
+
+  type SentChatBody = {
+    model: string;
+    messages: { role: string; content: string }[];
+    max_tokens: number;
+  };
+
+  const sentBody = (http: { post: jest.Mock }): SentChatBody => http.post.mock.calls[0][1] as SentChatBody;
+
+  const dialogMessages = (count: number, content: (index: number) => string) =>
+    Array.from({ length: count }, (_, index) => ({
+      role: index === count - 1 ? 'user' : 'assistant',
+      content: content(index)
+    }));
+
+  it('selects context budgets by model and lets env override each limit independently', () => {
+    clearLlmEnv();
+
+    expect(resolveContextBudget('qwen3.8-max')).toEqual({ maxMessages: 40, maxChars: 64000 });
+    expect(resolveContextBudget('qwen3.8-27b')).toEqual({ maxMessages: 40, maxChars: 64000 });
+    expect(resolveContextBudget('qwen3.8-max-0902')).toEqual({ maxMessages: 40, maxChars: 64000 });
+    expect(resolveContextBudget('deepseek-flash')).toEqual({ maxMessages: 40, maxChars: 64000 });
+    expect(resolveContextBudget('deepseek-v4-pro')).toEqual({ maxMessages: 40, maxChars: 64000 });
+    expect(resolveContextBudget('qwen-max')).toEqual({ maxMessages: 24, maxChars: 24000 });
+    expect(resolveContextBudget('qwen2.5-72b-instruct')).toEqual({ maxMessages: 24, maxChars: 24000 });
+    expect(resolveContextBudget('custom-model')).toEqual({ maxMessages: 24, maxChars: 24000 });
+
+    process.env.LLM_CONTEXT_MAX_MESSAGES = '7';
+    expect(resolveContextBudget('qwen3.8-max')).toEqual({ maxMessages: 7, maxChars: 64000 });
+
+    process.env.LLM_CONTEXT_MAX_CHARS = '9000';
+    expect(resolveContextBudget('qwen-max')).toEqual({ maxMessages: 7, maxChars: 9000 });
+
+    process.env.LLM_CONTEXT_MAX_MESSAGES = '0';
+    process.env.LLM_CONTEXT_MAX_CHARS = '-2';
+    expect(resolveContextBudget('qwen3.8-max')).toEqual({ maxMessages: 40, maxChars: 64000 });
+    expect(resolveContextBudget('custom-model')).toEqual({ maxMessages: 24, maxChars: 24000 });
+  });
+
+  it('keeps all dialog messages when within the modern model default budget', async () => {
+    clearLlmEnv();
+    process.env.DASHSCOPE_API_KEY = 'dashscope-key';
+    const { chat, http } = createStreamChat(null);
+
+    await chat.chatStream(
+      'user-1',
+      dialogMessages(30, (index) => `m${index}`),
+      undefined,
+      'qwen3.8-max'
+    );
+
+    expect(sentBody(http).messages).toHaveLength(30);
+    expect(sentBody(http).max_tokens).toBe(16384);
+  });
+
+  it('keeps all system messages and only the latest 40 dialog messages for modern models', async () => {
+    clearLlmEnv();
+    process.env.DASHSCOPE_API_KEY = 'dashscope-key';
+    const { chat, http } = createStreamChat(null);
+    const messages = [
+      { role: 'system', content: 'system-a' },
+      { role: 'system', content: 'system-b' },
+      ...dialogMessages(46, (index) => `m${index}`)
+    ];
+
+    await chat.chatStream('user-1', messages, undefined, 'qwen3.8-max');
+
+    const sent = sentBody(http).messages;
+    const dialog = sent.filter((item) => item.role !== 'system');
+    expect(sent.filter((item) => item.role === 'system').map((item) => item.content)).toEqual(['system-a', 'system-b']);
+    expect(dialog).toHaveLength(40);
+    expect(dialog[dialog.length - 1].content).toBe('m45');
+    expect(sent.some((item) => item.content === 'm0')).toBe(false);
+  });
+
+  it('applies the narrower context budget to legacy models', async () => {
+    clearLlmEnv();
+    process.env.DASHSCOPE_API_KEY = 'dashscope-key';
+    const { chat, http } = createStreamChat(null);
+
+    await chat.chatStream(
+      'user-1',
+      dialogMessages(30, (index) => `m${index}`),
+      undefined,
+      'qwen-max'
+    );
+
+    expect(sentBody(http).messages).toHaveLength(24);
+    expect(sentBody(http).max_tokens).toBe(8192);
+  });
+
+  it('trims characters from the oldest dialog and never removes the final user prompt', async () => {
+    clearLlmEnv();
+    process.env.DASHSCOPE_API_KEY = 'dashscope-key';
+    const { chat, http } = createStreamChat(null);
+    const pad = (prefix: string) => prefix + 'x'.repeat(3000 - prefix.length);
+
+    await chat.chatStream(
+      'user-1',
+      dialogMessages(30, (index) => pad(`m${index}`)),
+      undefined,
+      'qwen3.8-max'
+    );
+
+    const sent = sentBody(http).messages;
+    expect(sent.reduce((sum, item) => sum + item.content.length, 0)).toBeLessThanOrEqual(64000);
+    expect(sent).toHaveLength(21);
+    expect(sent[sent.length - 1].content).toBe(pad('m29'));
+    expect(sent.some((item) => item.content === pad('m0'))).toBe(false);
+  });
+
+  it('keeps the dialog when total characters exactly hit the budget', async () => {
+    clearLlmEnv();
+    process.env.DASHSCOPE_API_KEY = 'dashscope-key';
+    const { chat, http } = createStreamChat(null);
+    const messages = [
+      { role: 'system', content: 's'.repeat(30000) },
+      { role: 'user', content: 'u'.repeat(34000) }
+    ];
+
+    await chat.chatStream('user-1', messages, undefined, 'qwen3.8-max');
+
+    expect(sentBody(http).messages).toHaveLength(2);
+  });
+
+  it('stops trimming when only system and the final user prompt remain', async () => {
+    clearLlmEnv();
+    process.env.DASHSCOPE_API_KEY = 'dashscope-key';
+    process.env.LLM_CONTEXT_MAX_CHARS = '100';
+    const { chat, http } = createStreamChat(null);
+    const messages = [
+      { role: 'system', content: 's'.repeat(80) },
+      { role: 'user', content: 'u'.repeat(80) }
+    ];
+
+    await chat.chatStream('user-1', messages, undefined, 'qwen3.8-max');
+
+    const sent = sentBody(http).messages;
+    expect(sent).toHaveLength(2);
+    expect(sent[0].role).toBe('system');
+    expect(sent[1]).toEqual({ role: 'user', content: 'u'.repeat(80) });
+  });
+
+  it('applies LLM_CONTEXT_MAX_MESSAGES from env to the request payload', async () => {
+    clearLlmEnv();
+    process.env.DASHSCOPE_API_KEY = 'dashscope-key';
+    process.env.LLM_CONTEXT_MAX_MESSAGES = '2';
+    const { chat, http } = createStreamChat(null);
+
+    await chat.chatStream(
+      'user-1',
+      dialogMessages(5, (index) => `m${index}`),
+      undefined,
+      'qwen-max'
+    );
+
+    const sent = sentBody(http).messages;
+    expect(sent).toHaveLength(2);
+    expect(sent[1]).toEqual({ role: 'user', content: 'm4' });
+  });
 
   it('calls dashscope for an override model that is not in the built-in catalog', async () => {
     clearLlmEnv();
