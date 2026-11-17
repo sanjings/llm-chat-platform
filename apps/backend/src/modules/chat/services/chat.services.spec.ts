@@ -216,6 +216,12 @@ describe('chat model routing', () => {
     expect(resolveModelMaxTokens('qwen3.8-max')).toBe(16384);
     process.env.LLM_MAX_TOKENS = '1.5';
     expect(resolveModelMaxTokens('qwen3.8-max')).toBe(16384);
+    process.env.LLM_MAX_TOKENS = '';
+    expect(resolveModelMaxTokens('qwen3.8-max')).toBe(16384);
+    process.env.LLM_MAX_TOKENS = '9'.repeat(309); // Number('9…9') === Infinity
+    expect(resolveModelMaxTokens('qwen3.8-max')).toBe(16384);
+    process.env.LLM_MAX_TOKENS = String(Number.MAX_SAFE_INTEGER + 1);
+    expect(resolveModelMaxTokens('qwen3.8-max')).toBe(16384);
   });
 
   it('keeps the built-in default when the list is overridden but LLM_MODEL is unset', () => {
@@ -344,6 +350,19 @@ describe('chat model routing', () => {
     process.env.LLM_CONTEXT_MAX_CHARS = '-2';
     expect(resolveContextBudget('qwen3.8-max')).toEqual({ maxMessages: 40, maxChars: 64000 });
     expect(resolveContextBudget('custom-model')).toEqual({ maxMessages: 24, maxChars: 24000 });
+  });
+
+  it('falls back to defaults when a context budget env is not a safe positive integer', () => {
+    clearLlmEnv();
+    const infinity = '9'.repeat(309);
+    const unsafe = String(Number.MAX_SAFE_INTEGER + 1);
+
+    for (const value of [infinity, unsafe, '', 'abc', '1.5', '-1', '0']) {
+      process.env.LLM_CONTEXT_MAX_MESSAGES = value;
+      process.env.LLM_CONTEXT_MAX_CHARS = value;
+      expect(resolveContextBudget('qwen3.8-max')).toEqual({ maxMessages: 40, maxChars: 64000 });
+      expect(resolveContextBudget('custom-model')).toEqual({ maxMessages: 24, maxChars: 24000 });
+    }
   });
 
   it('keeps all dialog messages when within the modern model default budget', async () => {

@@ -118,14 +118,17 @@ const parsePositiveInt = (raw: string | undefined): number | null => {
   const text = raw?.trim();
   if (!text || !/^\d+$/.test(text)) return null;
   const value = Number(text);
-  return value > 0 ? value : null;
+  // 309 位全 9 会变成 Infinity；超过 MAX_SAFE_INTEGER 也会丢精度，都按非法值回退默认。
+  return Number.isFinite(value) && Number.isSafeInteger(value) && value > 0 ? value : null;
 };
 
 /**
  * 生成长度按模型区分，默认值依据（约 2026-11 官方文档）：
  * - 通义 qwen[3-9]*（含部署覆盖里的 qwen3.8-27b / qwen3.8-max-0902 等）：
  *   最大输出 131072，上下文 1M。兼容模式里 max_tokens 只限制最终回答（不含思维链），
- *   默认 16384 足以覆盖常规长文/长代码，又远低于上限，成本和 120s 请求超时都更可控。
+ *   默认 16384 足以覆盖常规长文/长代码，又远低于上限，成本更可控。
+ *   流式请求的 120s 是已连接 socket 的空闲/无数据超时，不是整段生成总时长上限；
+ *   只要流里持续有 chunk 就不会因总时长超过 120s 中断，不要为了默认 16384 调整它。
  * - DeepSeek deepseek*：最大输出 384K；开启思考时官方 max_tokens 默认 65536（含思维链+回答），
  *   关闭思考时默认 8192。本项目会对 DeepSeek 开启思考，因此显式写 65536，保持与官方默认一致。
  * - 旧通义（qwen-max / qwen-plus / qwen-turbo / qwen2.5-* 等）与未知自定义模型：
@@ -280,6 +283,8 @@ export class ChatService {
    * - 最后一条必须是 user
    * - 保留全部 system + 最近 N 条对话（N 由模型预算决定）
    * - 再按总字符预算从最老对话开始裁剪，永不删除最后一条当前 user prompt
+   * - system / 末尾 user 受保护，允许略超字符预算；Markdown 说明（约 44 字符）在裁剪后追加，
+   *   也不回头扩大裁剪，因此最终上下文可能比预算多出这一小段。
    */
   private normalizeContext(
     messages: ChatStreamMessage[],
