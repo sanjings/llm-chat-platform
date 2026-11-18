@@ -11,6 +11,50 @@ export type StreamTextDelta = {
   reasoning: string;
 };
 
+/** 与后端 utils/chat-stream-events.ts 同一套协议。 */
+export type ChatStreamErrorCode = 'upstream_error' | 'timeout' | 'connection_closed' | 'save_failed';
+
+export type ChatStreamErrorEvent = {
+  type: 'chat-error';
+  code: ChatStreamErrorCode;
+  message: string;
+};
+
+const CHAT_STREAM_ERROR_CODES: ChatStreamErrorCode[] = [
+  'upstream_error',
+  'timeout',
+  'connection_closed',
+  'save_failed'
+];
+
+const fallbackErrorMessage = 'AI 服务异常，请稍后重试';
+
+const asChatStreamError = (value: unknown): ChatStreamErrorEvent | null => {
+  if (!value || typeof value !== 'object') return null;
+  const record = value as Record<string, unknown>;
+  if (record.type !== 'chat-error') return null;
+  const code = CHAT_STREAM_ERROR_CODES.includes(record.code as ChatStreamErrorCode)
+    ? (record.code as ChatStreamErrorCode)
+    : 'upstream_error';
+  const message =
+    typeof record.message === 'string' && record.message.trim() ? record.message.trim() : fallbackErrorMessage;
+  return { type: 'chat-error', code, message };
+};
+
+/** 服务端在流中报告的失败；在流结束后统一抛出，避免漏掉后面的保存失败提示。 */
+export class ChatStreamError extends Error {
+  readonly code: ChatStreamErrorCode;
+  readonly events: ChatStreamErrorEvent[];
+
+  constructor(events: ChatStreamErrorEvent[]) {
+    const messages = Array.from(new Set(events.map((event) => event.message).filter(Boolean)));
+    super(messages.join('；') || fallbackErrorMessage);
+    this.name = 'ChatStreamError';
+    this.code = events.find((event) => event.code === 'save_failed')?.code || events[0]?.code || 'upstream_error';
+    this.events = events;
+  }
+}
+
 type AssistantSsePiece = {
   contentDelta: string;
   contentFull?: string;
@@ -115,6 +159,8 @@ export async function readStream(
   /** DashScope output.text 已见到的整段正文 */
   let dashscopeContent = '';
   const reasoningState: ReasoningCursor = { reasoning: '', reasoningCursor: '' };
+  const streamErrors: ChatStreamErrorEvent[] = [];
+  let eventName = '';
 
   while (true) {
     const { done, value } = await reader.read();
@@ -126,17 +172,45 @@ export async function readStream(
 
     for (const line of lines) {
       const trimmedLine = line.trim();
-      if (!trimmedLine || trimmedLine.startsWith('event:') || trimmedLine.startsWith('id:')) {
+      if (!trimmedLine) {
+        eventName = '';
         continue;
       }
+      if (trimmedLine.startsWith('event:')) {
+        eventName = trimmedLine.slice('event:'.length).trim();
+        continue;
+      }
+      if (trimmedLine.startsWith('id:')) continue;
 
       if (!trimmedLine.startsWith('data:')) continue;
 
       const jsonStr = trimmedLine.replace(/^data:\s*/, '').trim();
-      if (jsonStr === '[DONE]') continue;
+      if (jsonStr === '[DONE]') {
+        eventName = '';
+        continue;
+      }
+
+      let json: Record<string, unknown>;
+      try {
+        json = JSON.parse(jsonStr) as Record<string, unknown>;
+      } catch {
+        // 半行 JSON
+        eventName = '';
+        continue;
+      }
+
+      // 自定义错误事件带 event 名和 data.type；正常模型 chunk 两个都没有。
+      if (eventName === 'error' || eventName === 'chat-error' || json.type === 'chat-error') {
+        streamErrors.push(
+          asChatStreamError(json) || { type: 'chat-error', code: 'upstream_error', message: fallbackErrorMessage }
+        );
+        eventName = '';
+        continue;
+      }
+      eventName = '';
 
       try {
-        const piece = readAssistantSseJson(JSON.parse(jsonStr) as Record<string, unknown>);
+        const piece = readAssistantSseJson(json);
         let content = '';
         if (piece.contentFull !== undefined) {
           if (piece.contentFull.length > dashscopeContent.length) {
@@ -151,8 +225,10 @@ export async function readStream(
         const reasoning = reasoningState.reasoning.slice(reasoningBefore);
         if (content || reasoning) onDelta({ content, reasoning });
       } catch {
-        // 半行 JSON
+        // 字段结构异常，忽略该 chunk
       }
     }
   }
+
+  if (streamErrors.length) throw new ChatStreamError(streamErrors);
 }

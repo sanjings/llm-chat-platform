@@ -274,6 +274,25 @@ export const useChatStore = create<ChatState>()((set, get) => ({
       rafIds.set(sessionKey, rafId);
     };
 
+    /** 停止或失败后，没有正文/思考的占位气泡不应留在界面上。 */
+    const removeEmptyAssistant = () => {
+      set((state) => {
+        const prev = state.messagesBySession[sessionKey] || [];
+        const next = prev.filter(
+          (msg) =>
+            !(msg.role === 'assistant' && msg.requestId === requestId && !msg.content?.trim() && !msg.reasoning?.trim())
+        );
+        if (next.length === prev.length) return state;
+        return {
+          ...state,
+          messagesBySession: {
+            ...state.messagesBySession,
+            [sessionKey]: next
+          }
+        };
+      });
+    };
+
     try {
       const baseMessages = get().messagesBySession[sessionKey] || [];
       const normalizedPayload = buildRequestMessages(baseMessages);
@@ -288,6 +307,7 @@ export const useChatStore = create<ChatState>()((set, get) => ({
         rafIds.delete(sessionKey);
       }
       flushDelta();
+      removeEmptyAssistant();
 
       const createdSessionId = result.sessionId;
       if (!sessionId && createdSessionId) {
@@ -323,18 +343,21 @@ export const useChatStore = create<ChatState>()((set, get) => ({
         rafIds.delete(sessionKey);
       }
       flushDelta();
-      const aborted = error instanceof DOMException && error.name === 'AbortError';
+      const aborted =
+        (error instanceof DOMException && error.name === 'AbortError') ||
+        (error instanceof Error && error.name === 'AbortError');
       if (!aborted) {
         const reason = error instanceof Error ? error.message : '请求失败';
         message.error(reason || '请求失败');
       }
+      removeEmptyAssistant();
       set((state) => ({
         streamBySession: {
           ...state.streamBySession,
           [sessionKey]: {
             status: aborted ? 'stopped' : 'error',
             requestId: null,
-            error: aborted ? null : String(error)
+            error: aborted ? null : error instanceof Error ? error.message : String(error)
           }
         }
       }));
@@ -347,11 +370,15 @@ export const useChatStore = create<ChatState>()((set, get) => ({
   stopSessionStream: (sessionId) => {
     const sessionKey = getSessionKey(sessionId);
     controllers.get(sessionKey)?.abort();
-    set((state) => ({
-      streamBySession: {
-        ...state.streamBySession,
-        [sessionKey]: { status: 'stopped', requestId: null, error: null }
-      }
-    }));
+    set((state) => {
+      const stream = ensureStreamState(state.streamBySession[sessionKey]);
+      return {
+        streamBySession: {
+          ...state.streamBySession,
+          // 保留 requestId，让 abort 后还没 flush 的增量仍能写进已有的助手气泡。
+          [sessionKey]: { ...stream, status: 'stopped', error: null }
+        }
+      };
+    });
   }
 }));
