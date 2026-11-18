@@ -7,6 +7,8 @@ export type AssistantSseState = {
   reasoning: string;
   /** 已接收的思考全文，用来识别后续整段快照里新增的部分 */
   reasoningCursor: string;
+  /** 上游在 HTTP 200 的 SSE data 里直接给出的 error 帧（如额度用尽），取第一条的可读信息。 */
+  upstreamError?: string;
 };
 
 export type AssistantSsePiece = {
@@ -60,6 +62,27 @@ export const absorbReasoning = (previous: string, incoming: string) => {
     return { next: previous, delta: '' };
   }
   return { next: previous + incoming, delta: incoming };
+};
+
+/**
+ * 常见供应商在 HTTP 200 的 SSE data 里直接给 error 帧：
+ * - {"error": "Insufficient Balance"}
+ * - {"error": {"message": "...", "type": "...", "code": "..."}}
+ * 提取可读信息；对象没有 message/msg 时回退通用失败文案。
+ * 只看顶层 error 字段，避免穷举各供应商格式；
+ * 我们自己的 chat-error 协议帧（type: 'chat-error'）不在此列。
+ */
+export const upstreamErrorMessageFromFrame = (json: Record<string, unknown>): string | undefined => {
+  if (json.type === 'chat-error') return undefined;
+  const error = json.error;
+  if (error === undefined || error === null) return undefined;
+  if (typeof error === 'string') return error.trim() || undefined;
+  if (typeof error === 'object') {
+    const record = error as Record<string, unknown>;
+    const message = asText(record.message) || asText(record.msg);
+    if (message && message.trim()) return message.trim();
+  }
+  return 'AI 服务响应失败，请稍后重试';
 };
 
 /**
@@ -130,7 +153,12 @@ export const accumulateAssistantFromSseChunk = (
     const jsonStr = line.replace(/^data:\s*/, '').trim();
     if (!jsonStr || jsonStr === '[DONE]') continue;
     try {
-      const piece = readAssistantSseJson(JSON.parse(jsonStr) as Record<string, unknown>, {
+      const json = JSON.parse(jsonStr) as Record<string, unknown>;
+      if (!state.upstreamError) {
+        const upstreamMessage = upstreamErrorMessageFromFrame(json);
+        if (upstreamMessage) state.upstreamError = upstreamMessage;
+      }
+      const piece = readAssistantSseJson(json, {
         dashscopeOutput: provider === 'dashscope'
       });
       if (piece.contentFull !== undefined) state.content = piece.contentFull;

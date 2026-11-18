@@ -1,5 +1,6 @@
 import { EventEmitter } from 'node:events';
 import { ChatController } from './chat.controller';
+import { StandardResponse } from 'src/common/response/standard.response';
 
 class FakeResponse extends EventEmitter {
   headersSent = false;
@@ -39,6 +40,11 @@ const tick = () => new Promise((resolve) => setImmediate(resolve));
 
 const modelChunk = (content: string) =>
   Buffer.from(`data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\n`);
+
+const reasoningChunk = (text: string) =>
+  Buffer.from(`data: ${JSON.stringify({ choices: [{ delta: { reasoning_content: text } }] })}\n\n`);
+
+const upstreamErrorChunk = (error: unknown) => Buffer.from(`data: ${JSON.stringify({ error })}\n\n`);
 
 const parseErrorEvents = (text: string) =>
   text
@@ -190,6 +196,170 @@ describe('chat stream failure and interruption', () => {
     expect((response.jsonBody as { message: string }).message).toContain('超时');
     expect(response.headers['Content-Type']).toBe('application/json; charset=utf-8');
     expect(saveAssistantMsg).not.toHaveBeenCalled();
+    expect(response.writableEnded).toBe(true);
+  });
+
+  it('writes save_failed over the still-open SSE when the client stops via cancel and saving fails', async () => {
+    const saveAssistantMsg = jest.fn().mockRejectedValue(new Error('database unavailable'));
+    const { controller, response, stream } = setup(saveAssistantMsg);
+    await start(controller, response);
+
+    stream.emit('data', modelChunk('停止前的正文'));
+    await controller.cancelStream({ sessionId: 'session-1' } as never, { sub: 'user-1' } as never);
+    await tick();
+
+    expect(stream.destroy).toHaveBeenCalledTimes(1);
+    expect(saveAssistantMsg).toHaveBeenCalledTimes(1);
+    expect(saveAssistantMsg).toHaveBeenCalledWith('user-1', 'session-1', '停止前的正文', '');
+    expect(parseErrorEvents(response.text)).toEqual([
+      expect.objectContaining({ code: 'save_failed', message: expect.stringContaining('未能保存') })
+    ]);
+    expect(response.writableEnded).toBe(true);
+  });
+
+  it('does not treat a destroy-induced stream error during cancel as an upstream failure', async () => {
+    const { controller, response, saveAssistantMsg, stream } = setup();
+    stream.destroy.mockImplementation(() => {
+      stream.emit('error', Object.assign(new Error('destroyed'), { code: 'ERR_STREAM_DESTROYED' }));
+    });
+    await start(controller, response);
+
+    stream.emit('data', modelChunk('停止前的正文'));
+    await controller.cancelStream({ sessionId: 'session-1' } as never, { sub: 'user-1' } as never);
+    await tick();
+
+    expect(saveAssistantMsg).toHaveBeenCalledTimes(1);
+    expect(parseErrorEvents(response.text)).toEqual([]);
+    expect(response.writableEnded).toBe(true);
+  });
+
+  it('ends quietly when the client stops via cancel and the partial answer saves successfully', async () => {
+    const { controller, response, saveAssistantMsg, stream } = setup();
+    await start(controller, response);
+
+    stream.emit('data', modelChunk('停止前的正文'));
+    await controller.cancelStream({ sessionId: 'session-1' } as never, { sub: 'user-1' } as never);
+    await tick();
+
+    expect(saveAssistantMsg).toHaveBeenCalledTimes(1);
+    expect(response.text).not.toContain('event: error');
+    expect(response.writableEnded).toBe(true);
+  });
+
+  it('returns success idempotently when cancel arrives after the stream already ended', async () => {
+    const { controller, response, saveAssistantMsg, stream } = setup();
+    await start(controller, response);
+
+    stream.emit('end');
+    await tick();
+
+    await expect(
+      controller.cancelStream({ sessionId: 'session-1' } as never, { sub: 'user-1' } as never)
+    ).resolves.toBeInstanceOf(StandardResponse);
+
+    expect(saveAssistantMsg).not.toHaveBeenCalled();
+    expect(stream.destroy).not.toHaveBeenCalled();
+  });
+
+  it('ignores a cancel from another user', async () => {
+    const { controller, response, saveAssistantMsg, stream } = setup();
+    await start(controller, response);
+
+    stream.emit('data', modelChunk('别人的会话'));
+    await controller.cancelStream({ sessionId: 'session-1' } as never, { sub: 'user-2' } as never);
+    await tick();
+
+    expect(stream.destroy).not.toHaveBeenCalled();
+    expect(saveAssistantMsg).not.toHaveBeenCalled();
+    expect(response.writableEnded).toBe(false);
+  });
+
+  it('saves reasoning-only answers as an assistant message with empty content when the stream ends', async () => {
+    const { controller, response, saveAssistantMsg, stream } = setup();
+    await start(controller, response);
+
+    stream.emit('data', reasoningChunk('先把思路想清楚'));
+    stream.emit('end');
+    await tick();
+
+    expect(saveAssistantMsg).toHaveBeenCalledTimes(1);
+    expect(saveAssistantMsg).toHaveBeenCalledWith('user-1', 'session-1', '', '先把思路想清楚');
+    expect(response.text).not.toContain('event: error');
+    expect(response.writableEnded).toBe(true);
+  });
+
+  it('saves reasoning-only answers when the client disconnects without any content', async () => {
+    const { controller, response, saveAssistantMsg, stream } = setup();
+    await start(controller, response);
+
+    stream.emit('data', reasoningChunk('只收到了思考'));
+    response.emit('close');
+    await tick();
+
+    expect(saveAssistantMsg).toHaveBeenCalledTimes(1);
+    expect(saveAssistantMsg).toHaveBeenCalledWith('user-1', 'session-1', '', '只收到了思考');
+    expect(stream.destroy).toHaveBeenCalledTimes(1);
+  });
+
+  it('saves reasoning-only answers when the client stops via cancel', async () => {
+    const { controller, response, saveAssistantMsg, stream } = setup();
+    await start(controller, response);
+
+    stream.emit('data', reasoningChunk('取消前的思考'));
+    await controller.cancelStream({ sessionId: 'session-1' } as never, { sub: 'user-1' } as never);
+    await tick();
+
+    expect(saveAssistantMsg).toHaveBeenCalledTimes(1);
+    expect(saveAssistantMsg).toHaveBeenCalledWith('user-1', 'session-1', '', '取消前的思考');
+    expect(response.writableEnded).toBe(true);
+  });
+
+  it('still does not save anything when cancel arrives before content and reasoning exist', async () => {
+    const { controller, response, saveAssistantMsg, stream } = setup();
+    await start(controller, response);
+
+    await controller.cancelStream({ sessionId: 'session-1' } as never, { sub: 'user-1' } as never);
+    await tick();
+
+    expect(saveAssistantMsg).not.toHaveBeenCalled();
+    expect(stream.destroy).toHaveBeenCalledTimes(1);
+    expect(response.text).not.toContain('event: error');
+    expect(response.writableEnded).toBe(true);
+  });
+
+  it('reports an upstream object error frame instead of ending silently, and keeps the generated content', async () => {
+    const { controller, response, saveAssistantMsg, stream } = setup();
+    await start(controller, response);
+
+    stream.emit('data', modelChunk('已经生成的正文'));
+    stream.emit(
+      'data',
+      upstreamErrorChunk({ message: 'Insufficient Balance', type: 'cc_quota', code: 'insufficient_balance' })
+    );
+    stream.emit('end');
+    await tick();
+
+    expect(saveAssistantMsg).toHaveBeenCalledTimes(1);
+    expect(saveAssistantMsg).toHaveBeenCalledWith('user-1', 'session-1', '已经生成的正文', '');
+    expect(parseErrorEvents(response.text)).toEqual([
+      expect.objectContaining({ code: 'upstream_error', message: expect.stringContaining('Insufficient Balance') })
+    ]);
+    expect(response.writableEnded).toBe(true);
+  });
+
+  it('reports an upstream string error frame and keeps reasoning-only output', async () => {
+    const { controller, response, saveAssistantMsg, stream } = setup();
+    await start(controller, response);
+
+    stream.emit('data', reasoningChunk('额度用完前的思考'));
+    stream.emit('data', upstreamErrorChunk('Insufficient Balance'));
+    await tick();
+
+    expect(saveAssistantMsg).toHaveBeenCalledTimes(1);
+    expect(saveAssistantMsg).toHaveBeenCalledWith('user-1', 'session-1', '', '额度用完前的思考');
+    expect(parseErrorEvents(response.text)).toEqual([
+      expect.objectContaining({ code: 'upstream_error', message: expect.stringContaining('Insufficient Balance') })
+    ]);
     expect(response.writableEnded).toBe(true);
   });
 });

@@ -29,6 +29,30 @@ const CHAT_STREAM_ERROR_CODES: ChatStreamErrorCode[] = [
 
 const fallbackErrorMessage = 'AI 服务异常，请稍后重试';
 
+/** 上游 HTTP 200 流里 data.error 帧的通用失败文案，与后端 classifyStreamError 的兜底一致。 */
+const upstreamDataErrorMessage = 'AI 服务响应失败，请稍后重试';
+
+/**
+ * 识别常见供应商在 HTTP 200 的 SSE data 里直接给出的 error 帧：
+ * - {"error": "Insufficient Balance"}
+ * - {"error": {"message": "...", "type": "...", "code": "..."}}
+ * 我们自己的 chat-error 协议帧（type: 'chat-error'）不在此列。
+ */
+const asUpstreamDataError = (json: Record<string, unknown>): ChatStreamErrorEvent | null => {
+  if (json.type === 'chat-error') return null;
+  if (!('error' in json) || json.error === null || json.error === undefined) return null;
+  const error = json.error;
+  let message = upstreamDataErrorMessage;
+  if (typeof error === 'string' && error.trim()) {
+    message = error.trim();
+  } else if (typeof error === 'object') {
+    const record = error as Record<string, unknown>;
+    const text = asText(record.message) || asText(record.msg);
+    if (text && text.trim()) message = text.trim();
+  }
+  return { type: 'chat-error', code: 'upstream_error', message };
+};
+
 const asChatStreamError = (value: unknown): ChatStreamErrorEvent | null => {
   if (!value || typeof value !== 'object') return null;
   const record = value as Record<string, unknown>;
@@ -208,6 +232,13 @@ export async function readStream(
         continue;
       }
       eventName = '';
+
+      // 上游 data.error 帧（如额度用尽）：收进错误列表，流结束后统一抛出，避免静默结束。
+      const upstreamError = asUpstreamDataError(json);
+      if (upstreamError) {
+        streamErrors.push(upstreamError);
+        continue;
+      }
 
       try {
         const piece = readAssistantSseJson(json);
