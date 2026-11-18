@@ -428,8 +428,9 @@ export class ChatService {
 
   async saveAssistantMsg(userId: string, sessionId: string, content: string, reasoning?: string) {
     const text = content.trim();
-    if (!text) return;
     const thought = reasoning?.trim();
+    // 有思考但没有正文时，思考也算已生成内容，要落库；两者都空才不写。
+    if (!text && !thought) return;
     await this.sendMsg(userId, 'assistant', text, sessionId, thought ? { reasoning: thought } : undefined);
   }
 }

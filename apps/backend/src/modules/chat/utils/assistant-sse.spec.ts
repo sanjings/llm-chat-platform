@@ -1,4 +1,8 @@
-import { accumulateAssistantFromSseChunk, type AssistantSseState } from './assistant-sse';
+import {
+  accumulateAssistantFromSseChunk,
+  upstreamErrorMessageFromFrame,
+  type AssistantSseState
+} from './assistant-sse';
 
 const createState = (): AssistantSseState => ({
   lineBuf: '',
@@ -142,5 +146,40 @@ describe('assistant sse accumulation', () => {
     accumulateAssistantFromSseChunk('openai_compatible', state, '行"}}]}\n');
     expect(state.content).toBe('完整半行');
     expect(state.reasoning).toBe('');
+  });
+});
+
+describe('upstream data.error frames', () => {
+  it('extracts a readable message from the common error shapes', () => {
+    expect(upstreamErrorMessageFromFrame({ error: 'Insufficient Balance' })).toBe('Insufficient Balance');
+    expect(
+      upstreamErrorMessageFromFrame({
+        error: { message: 'Insufficient Balance', type: 'cc_quota', code: 'insufficient_balance' }
+      })
+    ).toBe('Insufficient Balance');
+    expect(upstreamErrorMessageFromFrame({ error: { msg: '余额不足' } })).toBe('余额不足');
+    expect(upstreamErrorMessageFromFrame({ error: { type: 'cc_quota' } })).toBe('AI 服务响应失败，请稍后重试');
+    expect(upstreamErrorMessageFromFrame({ choices: [{ delta: { content: '正文' } }] })).toBeUndefined();
+    expect(upstreamErrorMessageFromFrame({ error: null })).toBeUndefined();
+  });
+
+  it('does not treat our own chat-error protocol frames as upstream errors', () => {
+    expect(
+      upstreamErrorMessageFromFrame({ type: 'chat-error', code: 'upstream_error', message: '提示' })
+    ).toBeUndefined();
+  });
+
+  it('records the first upstream error on the accumulation state without touching content', () => {
+    const state = createState();
+    accumulateAssistantFromSseChunk(
+      'openai_compatible',
+      state,
+      `data: ${JSON.stringify({ error: 'Insufficient Balance' })}\ndata: ${JSON.stringify({
+        error: '后来的错误'
+      })}\n`
+    );
+
+    expect(state.upstreamError).toBe('Insufficient Balance');
+    expect(state.content).toBe('');
   });
 });

@@ -47,6 +47,13 @@ export class ChatDto {
   responseFormat?: ResponseFormatWire;
 }
 
+export class ChatStreamCancelDto {
+  @ApiProperty({ example: 'session-id' })
+  @IsNotEmpty({ message: 'sessionId 不能为空' })
+  @IsString()
+  sessionId: string;
+}
+
 export class ChatModelOptionDto {
   @ApiProperty({ example: 'qwen3.7-plus', description: '上游官方模型 ID' })
   id: string;
