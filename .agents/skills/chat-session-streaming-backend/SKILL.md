@@ -28,7 +28,7 @@ description: Implement and debug backend SSE chat streaming behavior in this rep
 1. `/chat/stream` contract remains: `messages`, optional `sessionId`, optional `modelId`, optional `responseFormat`.
 2. Validate and normalize context before provider call; reject if last message is not user.
 3. Persist one user message per request before opening provider stream.
-4. Forward provider SSE chunks as-is to client; frontend parser depends on shape compatibility. Accumulate正文 and思考 separately through `assistant-sse` helpers; never merge reasoning into content.
+4. Forward provider SSE chunks as-is to client; frontend parser depends on shape compatibility. Accumulate content and reasoning separately through `assistant-sse` helpers; never merge reasoning into content.
 5. Accumulate assistant text safely across partial SSE lines and flush the trailing line at stream end. Save once per finished stream.
 6. Save the assistant message when either `content.trim()` or `reasoning.trim()` is non-empty. A reasoning-only answer is persisted with `content` as an empty string (Prisma `Message.content` is required). Only skip saving when both are empty.
 7. Return `session-id` header on stream response.
