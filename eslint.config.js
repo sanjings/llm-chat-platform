@@ -24,7 +24,7 @@ export default tseslint.config(
   {
     ignores: [
       '.vscode/**',
-      '.cursor/**',
+      '.agents/**',
       '**/node_modules/**',
       '**/dist/**',
       '**/build/**',

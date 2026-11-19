@@ -29,7 +29,7 @@ Provide shared coding and delivery rules for `llm-chat-platform` so changes do n
 - Do not change SSE data shape casually; parser compatibility is part of the contract.
 - Session isolation takes priority over UI convenience.
 - Any model/provider change must respect session model binding semantics.
-- Persistence semantics stay explicit: user message before stream, assistant message on stream completion.
+- Persistence semantics stay explicit: user message before stream; assistant message at stream completion when `content` or `reasoning` is non-empty. Reasoning-only answers are saved with empty `content`; both empty means no assistant message.
 
 ## Change Workflow
 
@@ -52,6 +52,8 @@ Provide shared coding and delivery rules for `llm-chat-platform` so changes do n
 
 - State is keyed by session where relevant.
 - Stream update path has request identity guard.
+- Stop uses cooperative cancel plus grace-period fallback abort, not immediate abort; partial content stays visible.
+- Stream errors (including `save_failed`) are surfaced once with visible feedback.
 - Loading/empty/skeleton UI does not break prompt placement.
 - New message flow in draft session renders immediately.
 
@@ -59,7 +61,9 @@ Provide shared coding and delivery rules for `llm-chat-platform` so changes do n
 
 - DTO remains strict and descriptive.
 - Context normalization still guarantees final user prompt.
-- Stream lifecycle handles `data`, `error`, `end` safely.
+- Stream lifecycle handles `data`, `error`, `end`, and client close once; SSE failures use the `chat-error` protocol.
+- Assistant persistence saves when content or reasoning exists, and never creates a fully empty assistant message.
+- Cooperative cancel only affects the same user's active stream and stays idempotent after completion.
 - DB writes are idempotent enough for expected stream behavior.
 
 ## Done Criteria
