@@ -9,6 +9,8 @@ apps/backend/.env
 # 构建产物
 **/dist/
 **/build/
+# 测试临时编译产物（portal npm test 先编译 TS 再跑 node --test）
+**/.tmp-test/
 apps/backend/**/generated/
 **/portal/stats.*
 .turbo/

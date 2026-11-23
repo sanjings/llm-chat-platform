@@ -3,6 +3,7 @@ node_modules/
 dist/
 build/
 coverage/
+.tmp-test/
 
 # 日志与压缩文件
 *.log
