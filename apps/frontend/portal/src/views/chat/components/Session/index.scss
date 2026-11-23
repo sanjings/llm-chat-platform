@@ -49,5 +49,12 @@
         display: none;
       }
     }
+    &-error {
+      padding: 9px;
+      color: var(--link-color);
+      text-align: center;
+      cursor: pointer;
+      list-style: none;
+    }
   }
 }

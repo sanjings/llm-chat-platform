@@ -10,6 +10,7 @@ description: Implement and debug frontend multi-session streaming chat behavior 
 - `apps/frontend/portal/src/store/chat.ts`
 - `apps/frontend/portal/src/views/chat/index.tsx`
 - `apps/frontend/portal/src/views/chat/components/Session/index.tsx`
+- `apps/frontend/portal/src/views/chat/components/Session/sessionListPaging.ts`
 - `apps/frontend/portal/src/views/chat/components/Window/index.tsx`
 - `apps/frontend/portal/src/views/chat/components/Window/Message/index.tsx`
 - `apps/frontend/portal/src/views/chat/components/Window/Prompt/index.tsx`
@@ -35,6 +36,7 @@ description: Implement and debug frontend multi-session streaming chat behavior 
 9. Remove the empty assistant placeholder only when the request produced neither `content` nor `reasoning`.
 10. Empty/new-window rendering logic uses message length, not only route param.
 11. Chat layout keeps prompt pinned at bottom (`flex: 1` handling in history container).
+12. Sidebar sessions load in pages (`SESSION_LIST_PAGE_SIZE = 20`, never `5000`): scroll-to-bottom appends the next page; the pager dedupes by session id, allows one in-flight request (retry included — a second concurrent `retry` returns immediately, while a real `reset` still invalidates in-flight pages), stops at `total`, and rejects stale responses after a reset/unmount. Create/rename/delete reset to page 1. A route id absent from loaded pages is filled via `requestSessionDetailId` so `llmModelId` (model binding) is preserved. Failure shows an explicit retry row; that row is not a normal "load more" button. When the sidebar viewport is not filled (no scrollbar: tall window, smaller server `pageSize`), `shouldLoadToFillViewport` keeps appending one page per check after render and on window/`ResizeObserver` resize — but never while the list container is off-screen or has zero height, so a hidden drawer never pulls all remaining pages.
 
 ## Workflow
 
@@ -78,10 +80,12 @@ description: Implement and debug frontend multi-session streaming chat behavior 
 - Accidentally sending empty assistant placeholder to backend.
 - Skeleton or loading container pushes prompt upward.
 - Abort logic cancels wrong session due to shared controller key mistakes.
+- Session list `pageSize=5000`, duplicate/stale page responses jumping the list, a stub route session losing its bound model, or a failed page silently blocking retries.
 
 ## Verification
 
 - `pnpm --filter @llm-chat-platform/portal exec tsc --noEmit`
+- `pnpm --filter @llm-chat-platform/portal test` (session list paging / race / CRUD / route-selection regressions；先 `tsc` 编译到 `.tmp-test/` 再 `node --test`，不依赖 TS 类型剥离，兼容 Node 20)
 - Check lints on changed frontend files.
 - Manual:
   - Start stream in session A, switch to B, ensure B stays clean.

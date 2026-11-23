@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "rootDir": ".",
+    "outDir": ".tmp-test",
+    "rewriteRelativeImportExtensions": true
+  },
+  "include": ["tests/**/*.ts", "types/**/*.d.ts", "src/views/chat/components/Session/sessionListPaging.ts"]
+}

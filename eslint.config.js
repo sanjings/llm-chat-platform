@@ -29,6 +29,7 @@ export default tseslint.config(
       '**/dist/**',
       '**/build/**',
       '**/coverage/**',
+      '**/.tmp-test/**',
       '**/swagger/**',
       '**/*.config.js',
       'lint-staged.config.mjs',
