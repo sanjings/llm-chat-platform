@@ -1,11 +1,19 @@
-import { Avatar, Dropdown, message, Space, Typography } from 'antd';
+import { Avatar, Dropdown, Space, Typography } from 'antd';
 import defaultAvatar from '@/assets/images/avatar.png';
 import { useUserStore } from '@/store/user';
 import { EllipsisOutlined, LogoutOutlined, SettingOutlined } from '@ant-design/icons';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { createSettingsEntryState, SETTINGS_PATH } from '@/views/settings/settingsNavigation';
+import { useNarrowLayout } from '@/hooks/useNarrowLayout';
+import { useAppStore } from '@/store/app';
 import './index.scss';
 
 const User: React.FC = () => {
   const userInfo = useUserStore((state) => state.userInfo);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const narrowLayout = useNarrowLayout();
+  const setCollapsed = useAppStore((state) => state.setCollapsed);
 
   const items = [
     {
@@ -13,7 +21,10 @@ const User: React.FC = () => {
       key: 'setting',
       icon: <SettingOutlined />,
       onClick: () => {
-        message.info('TO DO');
+        if (narrowLayout) {
+          setCollapsed(true);
+        }
+        navigate(SETTINGS_PATH, { state: createSettingsEntryState(location.pathname) });
       }
     },
     {

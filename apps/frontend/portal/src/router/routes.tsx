@@ -1,5 +1,6 @@
 import Login from '@/views/login';
 import Chat from '@/views/chat';
+import Settings from '@/views/settings';
 import NotFound from '@/views/error/notFound';
 import { Navigate, redirect, type RouteObject } from 'react-router-dom';
 import { useUserStore } from '@/store/user';
@@ -30,6 +31,10 @@ export const staticRoutes: RouteObject[] = [
       {
         path: 'chat/:sessionId?',
         element: <Chat />
+      },
+      {
+        path: 'settings',
+        element: <Settings />
       },
       {
         path: 'error',
