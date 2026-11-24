@@ -6,5 +6,10 @@
     "outDir": ".tmp-test",
     "rewriteRelativeImportExtensions": true
   },
-  "include": ["tests/**/*.ts", "types/**/*.d.ts", "src/views/chat/components/Session/sessionListPaging.ts"]
+  "include": [
+    "tests/**/*.ts",
+    "types/**/*.d.ts",
+    "src/views/chat/components/Session/sessionListPaging.ts",
+    "src/views/settings/settingsNavigation.ts"
+  ]
 }

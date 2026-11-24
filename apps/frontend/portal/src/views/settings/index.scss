@@ -1,0 +1,71 @@
+.settings-page {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background: var(--app-bg);
+
+  &__header {
+    box-sizing: border-box;
+    display: flex;
+    flex-shrink: 0;
+    gap: 8px;
+    align-items: center;
+    height: 56px;
+    padding-inline: 20px;
+    background: var(--surface-elevated);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  &__back {
+    color: var(--app-text) !important;
+  }
+
+  &__title {
+    margin: 0 !important;
+    color: var(--app-text) !important;
+  }
+
+  &__main {
+    box-sizing: border-box;
+    flex: 1;
+    min-height: 0;
+    padding: 32px 20px;
+    overflow: auto;
+  }
+
+  &__card {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 720px;
+    padding: 24px;
+    margin: 0 auto;
+    color: var(--app-text);
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    box-shadow: var(--shadow-input);
+  }
+
+  &__description {
+    margin: 0 !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .settings-page {
+    &__header {
+      padding-inline: 12px;
+    }
+
+    &__main {
+      padding: 16px 12px;
+    }
+
+    &__card {
+      padding: 20px 16px;
+      border-radius: 10px;
+    }
+  }
+}
