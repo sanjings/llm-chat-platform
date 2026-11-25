@@ -4,7 +4,6 @@ import { test } from 'node:test';
 import {
   createSettingsEntryState,
   resolveSettingsReturnPath,
-  SETTINGS_EMPTY_DESCRIPTION,
   SETTINGS_PATH
 } from '../src/views/settings/settingsNavigation.ts';
 
@@ -28,9 +27,10 @@ test('刷新或直接访问后没有来源状态，返回新对话页而不是�
   assert.equal(resolveSettingsReturnPath({ from: '/login' }), '/chat');
 });
 
-test('设置页提供明确的空状态文案', () => {
-  assert.match(SETTINGS_EMPTY_DESCRIPTION, /暂无可配置项/);
-  assert.match(readSource('views/settings/index.tsx'), /description=\{SETTINGS_EMPTY_DESCRIPTION\}/);
+test('设置页已提供具体配置项，不再显示空状态占位', () => {
+  const source = readSource('views/settings/index.tsx');
+  assert.doesNotMatch(source, /暂无可配置项|Empty/);
+  assert.match(source, /外观/);
 });
 
 test('用户菜单不再弹出 TO DO，并导航到设置路由', () => {

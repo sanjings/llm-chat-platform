@@ -10,6 +10,7 @@
     "tests/**/*.ts",
     "types/**/*.d.ts",
     "src/views/chat/components/Session/sessionListPaging.ts",
-    "src/views/settings/settingsNavigation.ts"
+    "src/views/settings/settingsNavigation.ts",
+    "src/utils/theme.ts"
   ]
 }

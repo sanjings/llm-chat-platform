@@ -1,7 +1,5 @@
 export const SETTINGS_PATH = '/settings';
 
-export const SETTINGS_EMPTY_DESCRIPTION = '暂无可配置项，后续版本会陆续开放。';
-
 export type SettingsLocationState = {
   /** 进入设置前所在的对话路由，返回时原样跳回。 */
   from?: string;

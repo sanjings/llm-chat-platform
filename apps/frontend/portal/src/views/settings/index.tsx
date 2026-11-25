@@ -1,8 +1,9 @@
 import { ArrowLeftOutlined } from '@ant-design/icons';
-import { Button, Empty, Typography } from 'antd';
+import { Button, Typography } from 'antd';
 import { useLocation, useNavigate } from 'react-router-dom';
+import ThemeSwitch from '@/components/ThemeSwitch';
 import { useNarrowLayout } from '@/hooks/useNarrowLayout';
-import { resolveSettingsReturnPath, SETTINGS_EMPTY_DESCRIPTION } from './settingsNavigation';
+import { resolveSettingsReturnPath } from './settingsNavigation';
 import './index.scss';
 
 export default function SettingsPage() {
@@ -29,10 +30,13 @@ export default function SettingsPage() {
 
       <main className="settings-page__main">
         <section className="settings-page__card">
+          <Typography.Title level={5} className="settings-page__section-title">
+            外观
+          </Typography.Title>
           <Typography.Paragraph type="secondary" className="settings-page__description">
-            管理账号与应用偏好。当前版本暂未开放具体配置项。
+            选择界面主题；跟随系统会随设备外观自动切换。
           </Typography.Paragraph>
-          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={SETTINGS_EMPTY_DESCRIPTION} />
+          <ThemeSwitch block />
         </section>
       </main>
     </div>

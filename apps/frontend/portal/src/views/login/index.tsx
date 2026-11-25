@@ -44,7 +44,7 @@ export default function LoginPage() {
   return (
     <div className="auth-page" style={{ paddingInline: 15 }}>
       <div className="auth-card">
-        <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+        <Space wrap style={{ width: '100%', justifyContent: 'space-between' }}>
           <Typography.Title level={3} style={{ margin: 0 }}>
             LLM Chat
           </Typography.Title>
