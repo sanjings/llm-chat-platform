@@ -48,8 +48,13 @@
     box-shadow: var(--shadow-input);
   }
 
+  &__section-title {
+    margin: 0 0 8px !important;
+    color: var(--app-text) !important;
+  }
+
   &__description {
-    margin: 0 !important;
+    margin: 0 0 16px !important;
   }
 }
 
