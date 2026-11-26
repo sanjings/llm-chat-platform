@@ -1,9 +1,12 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Body, Controller, Get, Put, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserService } from '../services/user.service';
 import { PageQueryDto } from 'src/common/pagination/page-query.dto';
 import { UserInfoQueryDto } from '../dtos/user-query.dto';
 import { PublicUserDto, UserListResponseDto } from '../dtos/user-response.dto';
+import { UpdateUserDefaultModelDto, UserDefaultModelDto } from '../dtos/user-default-model.dto';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import type { JwtPayload } from 'src/modules/auth/interfaces/jwt-payload.interface';
 
 @Controller('user')
 @ApiTags('user')
@@ -22,5 +25,19 @@ export class UserController {
   @ApiOkResponse({ description: '用户信息', type: PublicUserDto })
   async info(@Query() query: UserInfoQueryDto) {
     return this.userService.getPublicUserById(query.userId);
+  }
+
+  @Get('default-model')
+  @ApiOperation({ summary: '当前登录用户的个人默认模型，以及按当前部署可用性计算的实际生效值' })
+  @ApiOkResponse({ type: UserDefaultModelDto })
+  async getDefaultModel(@CurrentUser() user: JwtPayload) {
+    return this.userService.getDefaultModel(user.sub);
+  }
+
+  @Put('default-model')
+  @ApiOperation({ summary: '保存当前登录用户的个人默认模型；仅允许设为当前部署中可用的模型' })
+  @ApiOkResponse({ type: UserDefaultModelDto })
+  async updateDefaultModel(@CurrentUser() user: JwtPayload, @Body() body: UpdateUserDefaultModelDto) {
+    return this.userService.setDefaultModel(user.sub, body.defaultModelId);
   }
 }

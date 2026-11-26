@@ -1,4 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { ChatService } from 'src/modules/chat/services/chat.services';
+import { resolveEffectiveModelId } from '../utils/default-model';
 import { RegisterDto } from 'src/modules/auth/dtos/auth.dto';
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
 import { resolveOffsetPagination } from 'src/common/pagination/offset-pagination.util';
@@ -15,7 +17,10 @@ const PUBLIC_USER_SELECT = {
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly chatService: ChatService
+  ) {}
 
   async findByPhoneOptional(phone: string) {
     return this.prisma.user.findUnique({ where: { phone } });
@@ -61,5 +66,46 @@ export class UserService {
         nickname: user.nickname || `用户_${user.phone.slice(-4)}`
       }
     });
+  }
+
+  async getDefaultModel(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { defaultModelId: true }
+    });
+    if (!user) throw new NotFoundException('用户不存在');
+
+    const models = this.chatService.listSelectableModels();
+    return {
+      defaultModelId: user.defaultModelId,
+      effectiveModelId: resolveEffectiveModelId(user.defaultModelId, models, this.chatService.defaultModelId())
+    };
+  }
+
+  async setDefaultModel(userId: string, defaultModelId: string) {
+    const modelId = defaultModelId.trim();
+    if (!modelId) throw new BadRequestException('默认模型不能为空');
+
+    const models = this.chatService.listSelectableModels();
+    const target = models.find((item) => item.id === modelId);
+    if (!target) {
+      throw new BadRequestException('该模型不在当前部署的可选列表中，不能设为默认');
+    }
+    if (!target.available) {
+      throw new BadRequestException(target.unavailableReason?.trim() || '该模型当前不可用，不能设为默认');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true }
+    });
+    if (!user) throw new NotFoundException('用户不存在');
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { defaultModelId: modelId }
+    });
+
+    return this.getDefaultModel(userId);
   }
 }
