@@ -121,6 +121,7 @@ export default function SettingsPage() {
               <div className="settings-page__model-options">
                 <Segmented<string>
                   block
+                  vertical={narrowLayout}
                   value={effectiveModelId || undefined}
                   disabled={loading || saving || !models.some((item) => item.available)}
                   options={models.map((item) => ({
