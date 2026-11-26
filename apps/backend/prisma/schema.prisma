@@ -32,15 +32,17 @@ enum Role {
 }
 
 model User {
-  id         String    @id @default(uuid())
-  phone      String    @unique
-  email      String?   @unique
-  password   String
-  nickname   String
-  avatar     String?
-  sessions   Session[]
-  createTime DateTime  @default(now())
-  updateTime DateTime  @updatedAt
+  id             String    @id @default(uuid())
+  phone          String    @unique
+  email          String?   @unique
+  password       String
+  nickname       String
+  avatar         String?
+  /** 当前账号保存的个人默认模型 ID；未设置时为 null，新会话回退到部署系统默认 */
+  defaultModelId String?
+  sessions       Session[]
+  createTime     DateTime  @default(now())
+  updateTime     DateTime  @updatedAt
 }
 
 model Message {

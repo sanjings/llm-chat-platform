@@ -31,6 +31,7 @@ export type UserMinAggregateOutputType = {
   password: string | null
   nickname: string | null
   avatar: string | null
+  defaultModelId: string | null
   createTime: Date | null
   updateTime: Date | null
 }
@@ -42,6 +43,7 @@ export type UserMaxAggregateOutputType = {
   password: string | null
   nickname: string | null
   avatar: string | null
+  defaultModelId: string | null
   createTime: Date | null
   updateTime: Date | null
 }
@@ -53,6 +55,7 @@ export type UserCountAggregateOutputType = {
   password: number
   nickname: number
   avatar: number
+  defaultModelId: number
   createTime: number
   updateTime: number
   _all: number
@@ -66,6 +69,7 @@ export type UserMinAggregateInputType = {
   password?: true
   nickname?: true
   avatar?: true
+  defaultModelId?: true
   createTime?: true
   updateTime?: true
 }
@@ -77,6 +81,7 @@ export type UserMaxAggregateInputType = {
   password?: true
   nickname?: true
   avatar?: true
+  defaultModelId?: true
   createTime?: true
   updateTime?: true
 }
@@ -88,6 +93,7 @@ export type UserCountAggregateInputType = {
   password?: true
   nickname?: true
   avatar?: true
+  defaultModelId?: true
   createTime?: true
   updateTime?: true
   _all?: true
@@ -172,6 +178,7 @@ export type UserGroupByOutputType = {
   password: string
   nickname: string
   avatar: string | null
+  defaultModelId: string | null
   createTime: Date
   updateTime: Date
   _count: UserCountAggregateOutputType | null
@@ -204,6 +211,7 @@ export type UserWhereInput = {
   password?: Prisma.StringFilter<"User"> | string
   nickname?: Prisma.StringFilter<"User"> | string
   avatar?: Prisma.StringNullableFilter<"User"> | string | null
+  defaultModelId?: Prisma.StringNullableFilter<"User"> | string | null
   createTime?: Prisma.DateTimeFilter<"User"> | Date | string
   updateTime?: Prisma.DateTimeFilter<"User"> | Date | string
   sessions?: Prisma.SessionListRelationFilter
@@ -216,6 +224,7 @@ export type UserOrderByWithRelationInput = {
   password?: Prisma.SortOrder
   nickname?: Prisma.SortOrder
   avatar?: Prisma.SortOrderInput | Prisma.SortOrder
+  defaultModelId?: Prisma.SortOrderInput | Prisma.SortOrder
   createTime?: Prisma.SortOrder
   updateTime?: Prisma.SortOrder
   sessions?: Prisma.SessionOrderByRelationAggregateInput
@@ -232,6 +241,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   password?: Prisma.StringFilter<"User"> | string
   nickname?: Prisma.StringFilter<"User"> | string
   avatar?: Prisma.StringNullableFilter<"User"> | string | null
+  defaultModelId?: Prisma.StringNullableFilter<"User"> | string | null
   createTime?: Prisma.DateTimeFilter<"User"> | Date | string
   updateTime?: Prisma.DateTimeFilter<"User"> | Date | string
   sessions?: Prisma.SessionListRelationFilter
@@ -244,6 +254,7 @@ export type UserOrderByWithAggregationInput = {
   password?: Prisma.SortOrder
   nickname?: Prisma.SortOrder
   avatar?: Prisma.SortOrderInput | Prisma.SortOrder
+  defaultModelId?: Prisma.SortOrderInput | Prisma.SortOrder
   createTime?: Prisma.SortOrder
   updateTime?: Prisma.SortOrder
   _count?: Prisma.UserCountOrderByAggregateInput
@@ -261,6 +272,7 @@ export type UserScalarWhereWithAggregatesInput = {
   password?: Prisma.StringWithAggregatesFilter<"User"> | string
   nickname?: Prisma.StringWithAggregatesFilter<"User"> | string
   avatar?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
+  defaultModelId?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   createTime?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
   updateTime?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
 }
@@ -272,6 +284,7 @@ export type UserCreateInput = {
   password: string
   nickname: string
   avatar?: string | null
+  defaultModelId?: string | null
   createTime?: Date | string
   updateTime?: Date | string
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -284,6 +297,7 @@ export type UserUncheckedCreateInput = {
   password: string
   nickname: string
   avatar?: string | null
+  defaultModelId?: string | null
   createTime?: Date | string
   updateTime?: Date | string
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -296,6 +310,7 @@ export type UserUpdateInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   nickname?: Prisma.StringFieldUpdateOperationsInput | string
   avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultModelId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updateTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -308,6 +323,7 @@ export type UserUncheckedUpdateInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   nickname?: Prisma.StringFieldUpdateOperationsInput | string
   avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultModelId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updateTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -320,6 +336,7 @@ export type UserCreateManyInput = {
   password: string
   nickname: string
   avatar?: string | null
+  defaultModelId?: string | null
   createTime?: Date | string
   updateTime?: Date | string
 }
@@ -331,6 +348,7 @@ export type UserUpdateManyMutationInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   nickname?: Prisma.StringFieldUpdateOperationsInput | string
   avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultModelId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updateTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -342,6 +360,7 @@ export type UserUncheckedUpdateManyInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   nickname?: Prisma.StringFieldUpdateOperationsInput | string
   avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultModelId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updateTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -364,6 +383,7 @@ export type UserCountOrderByAggregateInput = {
   password?: Prisma.SortOrder
   nickname?: Prisma.SortOrder
   avatar?: Prisma.SortOrder
+  defaultModelId?: Prisma.SortOrder
   createTime?: Prisma.SortOrder
   updateTime?: Prisma.SortOrder
 }
@@ -375,6 +395,7 @@ export type UserMaxOrderByAggregateInput = {
   password?: Prisma.SortOrder
   nickname?: Prisma.SortOrder
   avatar?: Prisma.SortOrder
+  defaultModelId?: Prisma.SortOrder
   createTime?: Prisma.SortOrder
   updateTime?: Prisma.SortOrder
 }
@@ -386,6 +407,7 @@ export type UserMinOrderByAggregateInput = {
   password?: Prisma.SortOrder
   nickname?: Prisma.SortOrder
   avatar?: Prisma.SortOrder
+  defaultModelId?: Prisma.SortOrder
   createTime?: Prisma.SortOrder
   updateTime?: Prisma.SortOrder
 }
@@ -411,6 +433,7 @@ export type UserCreateWithoutSessionsInput = {
   password: string
   nickname: string
   avatar?: string | null
+  defaultModelId?: string | null
   createTime?: Date | string
   updateTime?: Date | string
 }
@@ -422,6 +445,7 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   password: string
   nickname: string
   avatar?: string | null
+  defaultModelId?: string | null
   createTime?: Date | string
   updateTime?: Date | string
 }
@@ -449,6 +473,7 @@ export type UserUpdateWithoutSessionsInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   nickname?: Prisma.StringFieldUpdateOperationsInput | string
   avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultModelId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updateTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -460,6 +485,7 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   nickname?: Prisma.StringFieldUpdateOperationsInput | string
   avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultModelId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updateTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -502,6 +528,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   password?: boolean
   nickname?: boolean
   avatar?: boolean
+  defaultModelId?: boolean
   createTime?: boolean
   updateTime?: boolean
   sessions?: boolean | Prisma.User$sessionsArgs<ExtArgs>
@@ -517,11 +544,12 @@ export type UserSelectScalar = {
   password?: boolean
   nickname?: boolean
   avatar?: boolean
+  defaultModelId?: boolean
   createTime?: boolean
   updateTime?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "phone" | "email" | "password" | "nickname" | "avatar" | "createTime" | "updateTime", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "phone" | "email" | "password" | "nickname" | "avatar" | "defaultModelId" | "createTime" | "updateTime", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   sessions?: boolean | Prisma.User$sessionsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
@@ -539,6 +567,10 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     password: string
     nickname: string
     avatar: string | null
+    /**
+     * * 当前账号保存的个人默认模型 ID；未设置时为 null，新会话回退到部署系统默认
+     */
+    defaultModelId: string | null
     createTime: Date
     updateTime: Date
   }, ExtArgs["result"]["user"]>
@@ -917,6 +949,7 @@ export interface UserFieldRefs {
   readonly password: Prisma.FieldRef<"User", 'String'>
   readonly nickname: Prisma.FieldRef<"User", 'String'>
   readonly avatar: Prisma.FieldRef<"User", 'String'>
+  readonly defaultModelId: Prisma.FieldRef<"User", 'String'>
   readonly createTime: Prisma.FieldRef<"User", 'DateTime'>
   readonly updateTime: Prisma.FieldRef<"User", 'DateTime'>
 }

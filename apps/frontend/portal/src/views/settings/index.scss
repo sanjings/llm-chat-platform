@@ -29,7 +29,10 @@
 
   &__main {
     box-sizing: border-box;
+    display: flex;
     flex: 1;
+    flex-direction: column;
+    gap: 16px;
     min-height: 0;
     padding: 32px 20px;
     overflow: auto;
@@ -55,6 +58,30 @@
 
   &__description {
     margin: 0 0 16px !important;
+  }
+
+  &__model-options {
+    max-width: 100%;
+    overflow-x: auto;
+
+    /* 窄屏改为纵向分段后，避免长模型名再被裁成省略号 */
+    .ant-segmented-vertical {
+      width: 100%;
+
+      .ant-segmented-item-label {
+        min-height: auto;
+        padding-block: 8px;
+        overflow: visible;
+        text-overflow: unset;
+        line-height: 1.4;
+        text-align: left;
+        white-space: normal;
+      }
+    }
+  }
+
+  &__effective {
+    margin: 12px 0 0 !important;
   }
 }
 

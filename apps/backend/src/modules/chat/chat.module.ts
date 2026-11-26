@@ -7,6 +7,7 @@ import { SessionModule } from '../session/session.module';
 @Module({
   imports: [HttpModule, SessionModule],
   controllers: [ChatController],
-  providers: [ChatService]
+  providers: [ChatService],
+  exports: [ChatService]
 })
 export class ChatModule {}
