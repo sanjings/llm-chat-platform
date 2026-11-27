@@ -5,6 +5,7 @@ import { PageQueryDto } from 'src/common/pagination/page-query.dto';
 import { UserInfoQueryDto } from '../dtos/user-query.dto';
 import { PublicUserDto, UserListResponseDto } from '../dtos/user-response.dto';
 import { UpdateUserDefaultModelDto, UserDefaultModelDto } from '../dtos/user-default-model.dto';
+import { CurrentUserProfileDto, UpdateCurrentUserProfileDto } from '../dtos/user-profile.dto';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { JwtPayload } from 'src/modules/auth/interfaces/jwt-payload.interface';
 
@@ -25,6 +26,20 @@ export class UserController {
   @ApiOkResponse({ description: '用户信息', type: PublicUserDto })
   async info(@Query() query: UserInfoQueryDto) {
     return this.userService.getPublicUserById(query.userId);
+  }
+
+  @Get('profile')
+  @ApiOperation({ summary: '读取当前登录用户的账号资料（昵称可改，手机号只读）' })
+  @ApiOkResponse({ type: CurrentUserProfileDto })
+  async getProfile(@CurrentUser() user: JwtPayload) {
+    return this.userService.getProfile(user.sub);
+  }
+
+  @Put('profile')
+  @ApiOperation({ summary: '更新当前登录用户的昵称；仅针对当前登录账号，不接受他人 userId，也不能改手机号' })
+  @ApiOkResponse({ type: CurrentUserProfileDto })
+  async updateProfile(@CurrentUser() user: JwtPayload, @Body() body: UpdateCurrentUserProfileDto) {
+    return this.userService.updateProfile(user.sub, body.nickname);
   }
 
   @Get('default-model')

@@ -4,6 +4,7 @@ import { resolveEffectiveModelId } from '../utils/default-model';
 import { RegisterDto } from 'src/modules/auth/dtos/auth.dto';
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
 import { resolveOffsetPagination } from 'src/common/pagination/offset-pagination.util';
+import { NICKNAME_MAX_LENGTH, NICKNAME_MIN_LENGTH } from 'src/common/validation/nickname';
 
 const PUBLIC_USER_SELECT = {
   id: true,
@@ -107,5 +108,41 @@ export class UserService {
     });
 
     return this.getDefaultModel(userId);
+  }
+
+  async getProfile(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { nickname: true, phone: true }
+    });
+    if (!user) throw new NotFoundException('用户不存在');
+    return user;
+  }
+
+  async updateProfile(userId: string, nickname: string) {
+    const nextNickname = this.assertNickname(nickname);
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true }
+    });
+    if (!user) throw new NotFoundException('用户不存在');
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { nickname: nextNickname }
+    });
+
+    return this.getProfile(userId);
+  }
+
+  /** 与注册规则对齐：必填、2～20 个字符。更新时不走空昵称自动生成。 */
+  private assertNickname(nickname: string) {
+    if (typeof nickname !== 'string' || nickname.length === 0) {
+      throw new BadRequestException('昵称不能为空');
+    }
+    if (nickname.length < NICKNAME_MIN_LENGTH || nickname.length > NICKNAME_MAX_LENGTH) {
+      throw new BadRequestException(`昵称长度需为 ${NICKNAME_MIN_LENGTH}～${NICKNAME_MAX_LENGTH} 个字符`);
+    }
+    return nickname;
   }
 }

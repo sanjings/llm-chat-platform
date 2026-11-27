@@ -60,6 +60,21 @@
     margin: 0 0 16px !important;
   }
 
+  &__profile-form {
+    max-width: 100%;
+  }
+
+  &__profile-field {
+    max-width: 100%;
+
+    .ant-input,
+    .ant-input-disabled {
+      max-width: 100%;
+      word-break: break-all;
+      overflow-wrap: anywhere;
+    }
+  }
+
   &__model-options {
     max-width: 100%;
     overflow-x: auto;
