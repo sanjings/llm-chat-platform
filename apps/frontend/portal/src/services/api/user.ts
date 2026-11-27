@@ -28,3 +28,31 @@ export const updateUserDefaultModel = async (defaultModelId: string) => {
   }
   return asDefaultModel(res.data);
 };
+
+export type UserProfile = {
+  nickname: string;
+  phone: string;
+};
+
+const asProfile = (data: UserProfile | undefined): UserProfile => ({
+  nickname: typeof data?.nickname === 'string' ? data.nickname : '',
+  phone: typeof data?.phone === 'string' ? data.phone : ''
+});
+
+/** 读取当前登录用户的账号资料，不按任意 userId 查询。 */
+export const requestUserProfile = async () => {
+  const res = await requestGet<UserProfile>('/api/user/profile');
+  if (res.code !== ApiResponseCode.SUCCESS) {
+    throw new Error(res.message || '账号资料加载失败');
+  }
+  return asProfile(res.data);
+};
+
+/** 更新当前登录用户的昵称；请求体只传 nickname，不传 userId 或手机号。 */
+export const updateUserProfile = async (nickname: string) => {
+  const res = await requestPut<UserProfile>('/api/user/profile', { nickname });
+  if (res.code !== ApiResponseCode.SUCCESS) {
+    throw new Error(res.message || '资料保存失败');
+  }
+  return asProfile(res.data);
+};

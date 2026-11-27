@@ -1,5 +1,6 @@
 import { IsNotEmpty, IsOptional, IsPhoneNumber, IsString, MaxLength, MinLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { NicknameField } from 'src/common/validation/nickname';
 
 export class RegisterDto {
   @ApiProperty({ example: '13800138000' })
@@ -15,11 +16,7 @@ export class RegisterDto {
   @MaxLength(32)
   password: string;
 
-  @ApiProperty({ minLength: 2, maxLength: 20 })
-  @IsNotEmpty({ message: '昵称不能为空' })
-  @IsString()
-  @MinLength(2)
-  @MaxLength(20)
+  @NicknameField()
   nickname: string;
 
   @ApiPropertyOptional({ description: '头像地址或 base64 字符串' })

@@ -1,20 +1,59 @@
 import { ArrowLeftOutlined } from '@ant-design/icons';
-import { Button, Segmented, Typography } from 'antd';
+import { Button, Form, Input, Segmented, Typography, message, type FormInstance } from 'antd';
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ThemeSwitch from '@/components/ThemeSwitch';
 import { useNarrowLayout } from '@/hooks/useNarrowLayout';
 import { requestChatModels, type ChatModelOption } from '@/services/api/chat';
-import { requestUserDefaultModel, updateUserDefaultModel } from '@/services/api/user';
+import {
+  requestUserDefaultModel,
+  requestUserProfile,
+  updateUserDefaultModel,
+  updateUserProfile,
+  type UserProfile
+} from '@/services/api/user';
+import { useUserStore } from '@/store/user';
 import { resolveEffectiveModelId, unavailableReasons } from '@/utils/defaultModel';
+import { validateNickname } from '@/utils/nickname';
 import { resolveSettingsReturnPath } from './settingsNavigation';
 import './index.scss';
+
+const nicknameRules = [
+  {
+    validator: async (_: unknown, value: string) => {
+      const error = validateNickname(typeof value === 'string' ? value : '');
+      if (error) throw new Error(error);
+    }
+  }
+];
+
+const applyCurrentUserProfile = (
+  profile: UserProfile,
+  form: FormInstance<{ nickname: string }>,
+  setPhone: (phone: string) => void,
+  setSavedNickname: (nickname: string) => void
+) => {
+  setPhone(profile.phone);
+  setSavedNickname(profile.nickname);
+  form.setFieldsValue({ nickname: profile.nickname });
+  const current = useUserStore.getState().userInfo;
+  if (current) {
+    useUserStore.getState().setUserInfo({ ...current, nickname: profile.nickname, phone: profile.phone });
+  }
+};
 
 export default function SettingsPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const narrowLayout = useNarrowLayout();
   const returnPath = resolveSettingsReturnPath(location.state);
+  const [profileForm] = Form.useForm<{ nickname: string }>();
+  const nicknameDraft = Form.useWatch('nickname', profileForm);
+  const [phone, setPhone] = useState('');
+  const [savedNickname, setSavedNickname] = useState('');
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileError, setProfileError] = useState('');
   const [models, setModels] = useState<ChatModelOption[]>([]);
   const [savedDefaultId, setSavedDefaultId] = useState<string | null>(null);
   const [systemDefaultId, setSystemDefaultId] = useState('');
@@ -22,6 +61,26 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    requestUserProfile()
+      .then((profile) => {
+        if (cancelled) return;
+        applyCurrentUserProfile(profile, profileForm, setPhone, setSavedNickname);
+        setProfileError('');
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setProfileError('账号资料加载失败，请稍后重试');
+      })
+      .finally(() => {
+        if (!cancelled) setProfileLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [profileForm]);
 
   useEffect(() => {
     let cancelled = false;
@@ -78,6 +137,26 @@ export default function SettingsPage() {
       });
   };
 
+  const handleSaveProfile = (values: { nickname: string }) => {
+    if (profileSaving || values.nickname === savedNickname) return;
+    setProfileSaving(true);
+    updateUserProfile(values.nickname)
+      .then((profile) => {
+        applyCurrentUserProfile(profile, profileForm, setPhone, setSavedNickname);
+        message.success('昵称已保存');
+      })
+      .catch((error: unknown) => {
+        profileForm.setFieldsValue({ nickname: savedNickname });
+        const alreadyToasted = Boolean(error && typeof error === 'object' && 'response' in error);
+        if (!alreadyToasted) {
+          message.error(error instanceof Error ? error.message : '资料保存失败');
+        }
+      })
+      .finally(() => {
+        setProfileSaving(false);
+      });
+  };
+
   const reasons = unavailableReasons(models);
 
   return (
@@ -97,6 +176,38 @@ export default function SettingsPage() {
       </header>
 
       <main className="settings-page__main">
+        <section className="settings-page__card">
+          <Typography.Title level={5} className="settings-page__section-title">
+            账号资料
+          </Typography.Title>
+          <Typography.Paragraph type="secondary" className="settings-page__description">
+            查看当前账号资料。可以修改昵称，手机号只读不可改。
+          </Typography.Paragraph>
+          {profileError ? (
+            <Typography.Text type="danger">{profileError}</Typography.Text>
+          ) : (
+            <Form
+              form={profileForm}
+              layout="vertical"
+              className="settings-page__profile-form"
+              onFinish={handleSaveProfile}>
+              <Form.Item name="nickname" label="昵称" rules={nicknameRules} className="settings-page__profile-field">
+                <Input placeholder="请输入昵称" disabled={profileLoading || profileSaving} allowClear />
+              </Form.Item>
+              <Form.Item label="手机号" className="settings-page__profile-field">
+                <Input value={phone} disabled readOnly />
+              </Form.Item>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={profileSaving}
+                disabled={profileLoading || profileSaving || nicknameDraft === savedNickname}>
+                保存
+              </Button>
+            </Form>
+          )}
+        </section>
+
         <section className="settings-page__card">
           <Typography.Title level={5} className="settings-page__section-title">
             外观
