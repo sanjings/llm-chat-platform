@@ -4,9 +4,10 @@ import { JwtService } from '@nestjs/jwt';
 import { compare, hashSync } from 'bcryptjs';
 import { createHash, randomUUID } from 'crypto';
 import { RedisService } from 'src/infrastructure/redis/redis.service';
-import { LoginDto, RefreshTokenDto, RegisterDto } from '../dtos/auth.dto';
+import { ChangePasswordDto, LoginDto, RefreshTokenDto, RegisterDto } from '../dtos/auth.dto';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { UserService } from 'src/modules/user/services/user.service';
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from 'src/common/validation/password';
 
 /** 注册接口关闭时返回的文案。登录页据此收起注册入口。 */
 export const REGISTRATION_CLOSED_MESSAGE = '当前未开放注册';
@@ -77,10 +78,34 @@ export class AuthService {
     await this.blacklistAccessToken(payload, authorization);
   }
 
+  async changePassword(userId: string, body: ChangePasswordDto) {
+    if (body.newPassword !== body.confirmNewPassword) {
+      throw new BadRequestException('两次输入的新密码不一致');
+    }
+    this.assertPassword(body.newPassword);
+
+    const user = await this.userService.getUserByIdWithPassword(userId);
+    const valid = await compare(body.currentPassword, user.password);
+    if (!valid) throw new BadRequestException('当前密码错误');
+
+    await this.userService.updatePasswordHash(userId, this.hashPassword(body.newPassword));
+  }
+
   async revokeAllSessions(userId: string) {
     const nextVersion = await this.incrementTokenVersion(userId);
     await this.clearUserSessions(userId);
     return { tokenVersion: nextVersion };
+  }
+
+  /** 与注册/登录规则对齐：必填、6～32 个字符，无字符集限制，不额外去空格。 */
+  private assertPassword(password: string) {
+    if (typeof password !== 'string' || password.length === 0) {
+      throw new BadRequestException('密码不能为空');
+    }
+    if (password.length < PASSWORD_MIN_LENGTH || password.length > PASSWORD_MAX_LENGTH) {
+      throw new BadRequestException(`密码长度需为 ${PASSWORD_MIN_LENGTH}～${PASSWORD_MAX_LENGTH} 个字符`);
+    }
+    return password;
   }
 
   private assertRegistrationOpen() {

@@ -145,4 +145,20 @@ export class UserService {
     }
     return nickname;
   }
+
+  async getUserByIdWithPassword(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, password: true }
+    });
+    if (!user) throw new NotFoundException('用户不存在');
+    return user;
+  }
+
+  async updatePasswordHash(userId: string, passwordHash: string) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: passwordHash }
+    });
+  }
 }

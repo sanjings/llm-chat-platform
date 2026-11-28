@@ -1,6 +1,7 @@
-import { IsNotEmpty, IsOptional, IsPhoneNumber, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsPhoneNumber, IsString } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { NicknameField } from 'src/common/validation/nickname';
+import { PasswordField } from 'src/common/validation/password';
 
 export class RegisterDto {
   @ApiProperty({ example: '13800138000' })
@@ -9,11 +10,7 @@ export class RegisterDto {
   @IsPhoneNumber('CN', { message: '手机号格式不正确' })
   phone: string;
 
-  @ApiProperty({ minLength: 6, maxLength: 32 })
-  @IsNotEmpty({ message: '密码不能为空' })
-  @IsString()
-  @MinLength(6)
-  @MaxLength(32)
+  @PasswordField()
   password: string;
 
   @NicknameField()
@@ -32,11 +29,7 @@ export class LoginDto {
   @IsPhoneNumber('CN', { message: '手机号格式不正确' })
   phone: string;
 
-  @ApiProperty({ minLength: 6, maxLength: 32 })
-  @IsNotEmpty({ message: '密码不能为空' })
-  @IsString()
-  @MinLength(6)
-  @MaxLength(32)
+  @PasswordField()
   password: string;
 }
 
@@ -45,4 +38,15 @@ export class RefreshTokenDto {
   @IsNotEmpty({ message: 'refreshToken 不能为空' })
   @IsString()
   refreshToken: string;
+}
+
+export class ChangePasswordDto {
+  @PasswordField()
+  currentPassword: string;
+
+  @PasswordField()
+  newPassword: string;
+
+  @PasswordField()
+  confirmNewPassword: string;
 }

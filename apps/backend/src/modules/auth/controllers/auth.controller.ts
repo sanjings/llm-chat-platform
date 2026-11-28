@@ -1,6 +1,6 @@
-import { Body, Controller, Get, Headers, Post } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Post, Put } from '@nestjs/common';
 import { AuthService } from '../services/auth.service';
-import { LoginDto, RefreshTokenDto, RegisterDto } from '../dtos/auth.dto';
+import { ChangePasswordDto, LoginDto, RefreshTokenDto, RegisterDto } from '../dtos/auth.dto';
 import { ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from 'src/common/decorators/public.decorator';
 import { SuccessMessage } from 'src/common/decorators/success-message.decorator';
@@ -75,5 +75,14 @@ export class AuthController {
   @SuccessMessage('全部退出成功')
   logoutAll(@CurrentUser() user: JwtPayload) {
     return this.authService.revokeAllSessions(user.sub);
+  }
+
+  @Put('password')
+  @ApiOperation({ summary: '修改当前登录用户的登录密码' })
+  @ApiBody({ type: ChangePasswordDto })
+  @ApiOkResponse({ description: '密码已修改', type: EmptySuccessDto })
+  @SuccessMessage('密码已修改')
+  changePassword(@CurrentUser() user: JwtPayload, @Body() body: ChangePasswordDto) {
+    return this.authService.changePassword(user.sub, body);
   }
 }
