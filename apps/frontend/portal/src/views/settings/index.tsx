@@ -1,9 +1,10 @@
 import { ArrowLeftOutlined } from '@ant-design/icons';
-import { Button, Form, Input, Segmented, Typography, message, type FormInstance } from 'antd';
+import { Button, Form, Input, Modal, Segmented, Typography, message, type FormInstance } from 'antd';
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ThemeSwitch from '@/components/ThemeSwitch';
 import { useNarrowLayout } from '@/hooks/useNarrowLayout';
+import { requestLogoutAllDevices, updateCurrentUserPassword } from '@/services/api/auth';
 import { requestChatModels, type ChatModelOption } from '@/services/api/chat';
 import {
   requestUserDefaultModel,
@@ -15,6 +16,7 @@ import {
 import { useUserStore } from '@/store/user';
 import { resolveEffectiveModelId, unavailableReasons } from '@/utils/defaultModel';
 import { validateNickname } from '@/utils/nickname';
+import { validatePassword } from '@/utils/password';
 import { resolveSettingsReturnPath } from './settingsNavigation';
 import './index.scss';
 
@@ -25,6 +27,25 @@ const nicknameRules = [
       if (error) throw new Error(error);
     }
   }
+];
+
+const passwordRules = [
+  {
+    validator: async (_: unknown, value: string) => {
+      const error = validatePassword(typeof value === 'string' ? value : '');
+      if (error) throw new Error(error);
+    }
+  }
+];
+
+const confirmNewPasswordRules = [
+  ({ getFieldValue }: { getFieldValue: (name: string) => string }) => ({
+    validator: async (_: unknown, value: string) => {
+      if (value !== getFieldValue('newPassword')) {
+        throw new Error('两次输入的新密码不一致');
+      }
+    }
+  })
 ];
 
 const applyCurrentUserProfile = (
@@ -54,6 +75,16 @@ export default function SettingsPage() {
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileError, setProfileError] = useState('');
+  const [passwordForm] = Form.useForm<{
+    currentPassword: string;
+    newPassword: string;
+    confirmNewPassword: string;
+  }>();
+  const currentPasswordDraft = Form.useWatch('currentPassword', passwordForm);
+  const newPasswordDraft = Form.useWatch('newPassword', passwordForm);
+  const confirmNewPasswordDraft = Form.useWatch('confirmNewPassword', passwordForm);
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [logoutAllLoading, setLogoutAllLoading] = useState(false);
   const [models, setModels] = useState<ChatModelOption[]>([]);
   const [savedDefaultId, setSavedDefaultId] = useState<string | null>(null);
   const [systemDefaultId, setSystemDefaultId] = useState('');
@@ -157,6 +188,56 @@ export default function SettingsPage() {
       });
   };
 
+  const handleChangePassword = (values: {
+    currentPassword: string;
+    newPassword: string;
+    confirmNewPassword: string;
+  }) => {
+    if (passwordSaving) return;
+    setPasswordSaving(true);
+    updateCurrentUserPassword(values)
+      .then(() => {
+        passwordForm.resetFields();
+        message.success('密码已修改');
+      })
+      .catch((error: unknown) => {
+        const alreadyToasted = Boolean(error && typeof error === 'object' && 'response' in error);
+        if (!alreadyToasted) {
+          message.error(error instanceof Error ? error.message : '密码修改失败');
+        }
+      })
+      .finally(() => {
+        setPasswordSaving(false);
+      });
+  };
+
+  const handleLogoutAll = () => {
+    Modal.confirm({
+      title: '退出全部设备',
+      content: '将立即退出全部已登录设备，包括当前设备，需要重新登录。',
+      okText: '退出全部设备',
+      okButtonProps: { danger: true },
+      cancelText: '取消',
+      onOk: () => {
+        setLogoutAllLoading(true);
+        return requestLogoutAllDevices()
+          .then(() => {
+            useUserStore.getState().logout();
+          })
+          .catch((error: unknown) => {
+            const alreadyToasted = Boolean(error && typeof error === 'object' && 'response' in error);
+            if (!alreadyToasted) {
+              message.error(error instanceof Error ? error.message : '退出全部设备失败');
+            }
+            return Promise.reject(error);
+          })
+          .finally(() => {
+            setLogoutAllLoading(false);
+          });
+      }
+    });
+  };
+
   const reasons = unavailableReasons(models);
 
   return (
@@ -206,6 +287,55 @@ export default function SettingsPage() {
               </Button>
             </Form>
           )}
+        </section>
+
+        <section className="settings-page__card">
+          <Typography.Title level={5} className="settings-page__section-title">
+            登录密码
+          </Typography.Title>
+          <Typography.Paragraph type="secondary" className="settings-page__description">
+            修改登录密码需要验证当前密码。也可以退出全部已登录设备，包括当前设备。
+          </Typography.Paragraph>
+          <Form
+            form={passwordForm}
+            layout="vertical"
+            className="settings-page__profile-form"
+            onFinish={handleChangePassword}>
+            <Form.Item
+              name="currentPassword"
+              label="当前密码"
+              rules={passwordRules}
+              className="settings-page__profile-field">
+              <Input.Password placeholder="请输入当前密码" maxLength={32} disabled={passwordSaving} />
+            </Form.Item>
+            <Form.Item name="newPassword" label="新密码" rules={passwordRules} className="settings-page__profile-field">
+              <Input.Password placeholder="请输入6-32位新密码" maxLength={32} disabled={passwordSaving} />
+            </Form.Item>
+            <Form.Item
+              name="confirmNewPassword"
+              label="确认新密码"
+              dependencies={['newPassword']}
+              rules={[...passwordRules, ...confirmNewPasswordRules]}
+              className="settings-page__profile-field">
+              <Input.Password placeholder="请再次输入新密码" maxLength={32} disabled={passwordSaving} />
+            </Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={passwordSaving}
+              disabled={passwordSaving || !currentPasswordDraft || !newPasswordDraft || !confirmNewPasswordDraft}>
+              修改密码
+            </Button>
+          </Form>
+          <div className="settings-page__security-actions">
+            <Button
+              danger
+              loading={logoutAllLoading}
+              disabled={logoutAllLoading || passwordSaving}
+              onClick={handleLogoutAll}>
+              退出全部设备
+            </Button>
+          </div>
         </section>
 
         <section className="settings-page__card">

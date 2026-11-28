@@ -13,6 +13,7 @@
     "src/views/settings/settingsNavigation.ts",
     "src/utils/theme.ts",
     "src/utils/defaultModel.ts",
-    "src/utils/nickname.ts"
+    "src/utils/nickname.ts",
+    "src/utils/password.ts"
   ]
 }

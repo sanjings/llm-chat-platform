@@ -26,7 +26,7 @@ test('设置页展示当前账号资料，可改昵称，手机号只读，保�
   assert.match(source, /disabled readOnly/);
   assert.match(source, /validateNickname/);
   assert.doesNotMatch(source, /userId/);
-  assert.doesNotMatch(source, /头像上传|换绑|修改密码|API Key|logoutAll/);
+  assert.doesNotMatch(source, /头像上传|换绑|API Key/);
 });
 
 test('当前用户资料接口只读写自己的昵称，不按任意 userId 更新，也不提交手机号', () => {

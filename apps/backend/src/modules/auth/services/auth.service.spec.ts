@@ -1,5 +1,5 @@
-import { BadRequestException } from '@nestjs/common';
-import { hashSync } from 'bcryptjs';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { compare, hashSync } from 'bcryptjs';
 import { AuthService, REGISTRATION_CLOSED_MESSAGE } from './auth.service';
 import type { RegisterDto } from '../dtos/auth.dto';
 
@@ -118,5 +118,104 @@ describe('registration switch', () => {
       avatar: null
     });
     await expect(service.register(registerBody())).rejects.toThrow(REGISTRATION_CLOSED_MESSAGE);
+  });
+});
+
+describe('change password', () => {
+  const currentPassword = 'secret12';
+  const newPassword = 'newpass99';
+  const user = {
+    id: 'user-1',
+    password: hashSync(currentPassword, 4)
+  };
+
+  const body = (overrides?: Partial<{ currentPassword: string; newPassword: string; confirmNewPassword: string }>) => ({
+    currentPassword,
+    newPassword,
+    confirmNewPassword: newPassword,
+    ...overrides
+  });
+
+  it('writes a hashed new password and does not revoke sessions', async () => {
+    const getUserByIdWithPassword = jest.fn().mockResolvedValue(user);
+    const updatePasswordHash = jest.fn().mockResolvedValue(undefined);
+    const service = createService({ getUserByIdWithPassword, updatePasswordHash });
+    const revoke = jest.spyOn(service, 'revokeAllSessions');
+
+    await expect(service.changePassword(user.id, body())).resolves.toBeUndefined();
+
+    expect(getUserByIdWithPassword).toHaveBeenCalledWith(user.id);
+    expect(updatePasswordHash).toHaveBeenCalledTimes(1);
+    expect(updatePasswordHash.mock.calls[0][0]).toBe(user.id);
+    const stored = updatePasswordHash.mock.calls[0][1] as string;
+    expect(stored).not.toBe(newPassword);
+    await expect(compare(newPassword, stored)).resolves.toBe(true);
+    await expect(compare(currentPassword, stored)).resolves.toBe(false);
+    expect(revoke).not.toHaveBeenCalled();
+  });
+
+  it('rejects a wrong current password and does not write', async () => {
+    const getUserByIdWithPassword = jest.fn().mockResolvedValue(user);
+    const updatePasswordHash = jest.fn();
+    const service = createService({ getUserByIdWithPassword, updatePasswordHash });
+
+    await expect(service.changePassword(user.id, body({ currentPassword: 'wrong-password' }))).rejects.toThrow(
+      BadRequestException
+    );
+    await expect(service.changePassword(user.id, body({ currentPassword: 'wrong-password' }))).rejects.toThrow(
+      '当前密码错误'
+    );
+    expect(updatePasswordHash).not.toHaveBeenCalled();
+  });
+
+  it('rejects mismatched confirmation and does not write', async () => {
+    const getUserByIdWithPassword = jest.fn();
+    const updatePasswordHash = jest.fn();
+    const service = createService({ getUserByIdWithPassword, updatePasswordHash });
+
+    await expect(service.changePassword(user.id, body({ confirmNewPassword: 'newpass88' }))).rejects.toThrow(
+      '两次输入的新密码不一致'
+    );
+    expect(getUserByIdWithPassword).not.toHaveBeenCalled();
+    expect(updatePasswordHash).not.toHaveBeenCalled();
+  });
+
+  it('rejects an empty or out-of-range new password and does not write', async () => {
+    const getUserByIdWithPassword = jest.fn();
+    const updatePasswordHash = jest.fn();
+    const service = createService({ getUserByIdWithPassword, updatePasswordHash });
+
+    await expect(service.changePassword(user.id, body({ newPassword: '', confirmNewPassword: '' }))).rejects.toThrow(
+      '密码不能为空'
+    );
+    await expect(
+      service.changePassword(user.id, body({ newPassword: '12345', confirmNewPassword: '12345' }))
+    ).rejects.toThrow('密码长度需为 6～32 个字符');
+    await expect(
+      service.changePassword(user.id, body({ newPassword: 'a'.repeat(33), confirmNewPassword: 'a'.repeat(33) }))
+    ).rejects.toThrow('密码长度需为 6～32 个字符');
+    expect(getUserByIdWithPassword).not.toHaveBeenCalled();
+    expect(updatePasswordHash).not.toHaveBeenCalled();
+  });
+
+  it('accepts new passwords of 6 and 32 characters', async () => {
+    const getUserByIdWithPassword = jest.fn().mockResolvedValue(user);
+    const updatePasswordHash = jest.fn().mockResolvedValue(undefined);
+    const service = createService({ getUserByIdWithPassword, updatePasswordHash });
+
+    const short = 'abcdef';
+    const long = 'p'.repeat(32);
+    await expect(service.changePassword(user.id, body({ newPassword: short, confirmNewPassword: short }))).resolves.toBeUndefined();
+    await expect(service.changePassword(user.id, body({ newPassword: long, confirmNewPassword: long }))).resolves.toBeUndefined();
+    expect(updatePasswordHash).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not write when the account is missing', async () => {
+    const getUserByIdWithPassword = jest.fn().mockRejectedValue(new NotFoundException('用户不存在'));
+    const updatePasswordHash = jest.fn();
+    const service = createService({ getUserByIdWithPassword, updatePasswordHash });
+
+    await expect(service.changePassword('missing', body())).rejects.toThrow(NotFoundException);
+    expect(updatePasswordHash).not.toHaveBeenCalled();
   });
 });
